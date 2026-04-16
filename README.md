@@ -70,9 +70,6 @@
 
 ---
 
-## 资源文件
-
-- `question-visual.png`：答题时头像装饰图（需在管理员中开启 **Image Red Effect** 才显示）。
 
 ---
 
