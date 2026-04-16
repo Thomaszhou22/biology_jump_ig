@@ -26,24 +26,6 @@
             margin-bottom: 2px;
         }
         #info-panel-header #turn-display { flex: 1; min-width: 0; }
-        #question-image-label {
-            flex-shrink: 0;
-            align-self: center;
-            font-size: 14px;
-            font-weight: bold;
-            color: #c0392b;
-            margin-right: 0;
-            white-space: nowrap;
-            letter-spacing: 0.02em;
-        }
-        #question-image-label.hidden { display: none; }
-        @keyframes question-image-label-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
-        }
-        #question-image-label.blink-last-seconds {
-            animation: question-image-label-blink 0.55s ease-in-out infinite;
-        }
         #question-box { border-radius: 8px; background: #f8f9fa; padding: 15px; margin: 15px 0; border-left: 5px solid #007bff; min-height: 140px; }
         #question-timer-wrap { margin-bottom: 12px; }
         #question-timer-wrap.hidden { display: none; }
@@ -61,36 +43,7 @@
             transition: width 0.05s linear, background 0.05s linear;
             background: hsl(120, 85%, 50%);
         }
-        #question-image-wrap {
-            position: relative;
-            flex-shrink: 0;
-            width: 72px;
-            height: 72px;
-            margin-top: 0;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        #question-image-wrap.hidden { display: none; }
-        #question-image {
-            display: block;
-            width: 100%;
-            height: 100%;
-            max-width: 100%;
-            max-height: none;
-            object-fit: cover;
-            border-radius: 10px;
-            vertical-align: middle;
-            transition: filter 0.2s linear, opacity 0.2s linear;
-        }
-        #question-image-red-overlay {
-            position: absolute;
-            inset: 0;
-            background: red;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.15s linear;
-            mix-blend-mode: multiply;
+
             border-radius: 10px;
         }
         .option-btn { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; transition: 0.2s; font-size: 13.5px; }
@@ -400,7 +353,7 @@
             <button type="button" id="test-random-winner-btn">Test Random Winner</button>
             <button type="button" id="toggle-answer-test-btn">All Answers Correct: OFF</button>
             <button type="button" id="toggle-move-hints-btn">Hints: ON</button>
-            <button type="button" id="admin-toggle-image-red">Image Red Effect: OFF</button>
+
             <button type="button" id="admin-close">Close</button>
         </div>
     </div>
@@ -415,11 +368,7 @@
                 <div id="turn-display" style="font-size: 18px; font-weight: bold;">
                     当前回合: <span id="player-label" style="color:#ff4757">—</span>
                 </div>
-                <div id="question-image-label" class="hidden" aria-hidden="true">7u红温中--&gt;</div>
-                <div id="question-image-wrap" class="hidden">
-                    <img id="question-image" src="" alt="Question visual">
-                    <div id="question-image-red-overlay"></div>
-                </div>
+
             </div>
             <div id="question-area">
                 <div id="question-box">
@@ -455,13 +404,6 @@ if (!sessionStorage.getItem(WRONG_BOOK_SESSION_KEY)) {
     } catch (e) {}
     sessionStorage.setItem(WRONG_BOOK_SESSION_KEY, '1');
 }
-
-const IMAGE_RED_EFFECT_KEY = 'organic-jump-image-red-effect';
-let imageRedEffectEnabled = false;
-try {
-    const saved = localStorage.getItem(IMAGE_RED_EFFECT_KEY);
-    if (saved !== null) imageRedEffectEnabled = saved === 'true';
-} catch (e) {}
 
 function getWrongBook() {
     try {
@@ -766,14 +708,6 @@ function pickRandomQuestionIndex() {
     const pool = candidates.length > 0 ? candidates : Array.from({ length: n }, (_, i) => i);
     return pool[Math.floor(Math.random() * pool.length)];
 }
-/** Decorative image (same folder as this HTML). Replace filename or path with your image file. */
-const QUESTION_IMAGE_PATH = 'question-visual.png';
-
-(function initQuestionDecorImage() {
-    const img = document.getElementById('question-image');
-    if (img) img.src = QUESTION_IMAGE_PATH;
-})();
-
 function clearAllSelectedHighlights() {
     document.querySelectorAll('.slot.selected').forEach(s => {
         s.classList.remove('selected');
@@ -793,62 +727,16 @@ function stopQuestionTimer() {
     questionDeadline = null;
 }
 
-function syncQuestionImageWrapVisibility() {
-    const wrap = document.getElementById('question-image-wrap');
-    const label = document.getElementById('question-image-label');
-    if (!wrap) return;
-    const timerWrap = document.getElementById('question-timer-wrap');
-    const timerVisible = timerWrap && !timerWrap.classList.contains('hidden');
-    if (!timerVisible) {
-        wrap.classList.add('hidden');
-        if (label) {
-            label.classList.add('hidden');
-            label.classList.remove('blink-last-seconds');
-            label.setAttribute('aria-hidden', 'true');
-        }
-        return;
-    }
-    if (!imageRedEffectEnabled) {
-        wrap.classList.add('hidden');
-        if (label) {
-            label.classList.add('hidden');
-            label.classList.remove('blink-last-seconds');
-            label.setAttribute('aria-hidden', 'true');
-        }
-        return;
-    }
-    wrap.classList.remove('hidden');
-    if (label) {
-        label.classList.remove('hidden');
-        label.setAttribute('aria-hidden', 'false');
-    }
-}
-
-function resetQuestionImageRedOverlay() {
-    const overlay = document.getElementById('question-image-red-overlay');
-    if (!overlay) return;
-    overlay.style.opacity = '0';
-    if (!imageRedEffectEnabled) {
-        overlay.style.display = 'none';
-    } else {
-        overlay.style.display = '';
-    }
-}
-
 function showQuestionTimer() {
     document.getElementById('question-timer-wrap').classList.remove('hidden');
-    syncQuestionImageWrapVisibility();
-    resetQuestionImageRedOverlay();
 }
 
 function hideQuestionTimer() {
     document.getElementById('question-timer-wrap').classList.add('hidden');
-    resetQuestionImageRedOverlay();
     const bar = document.getElementById('question-timer-bar');
     bar.style.width = '100%';
     bar.style.background = 'hsl(120, 85%, 50%)';
     document.getElementById('question-timer-text').textContent = QUESTION_TIME_LIMIT + 's';
-    syncQuestionImageWrapVisibility();
 }
 
 function updateQuestionTimerUI(remainingMs, ratio) {
@@ -859,57 +747,9 @@ function updateQuestionTimerUI(remainingMs, ratio) {
     bar.style.width = `${r * 100}%`;
     const hue = r * 120;
     bar.style.background = `hsl(${hue}, 85%, 50%)`;
-    const ratioClamped = r;
-    const elapsedRatio = 1 - ratioClamped;
-    const intensity = Math.pow(elapsedRatio, 1.3);
-    const overlay = document.getElementById('question-image-red-overlay');
-    if (overlay) {
-        if (imageRedEffectEnabled) {
-            overlay.style.display = '';
-            overlay.style.opacity = String(intensity * 0.85);
-        } else {
-            overlay.style.opacity = '0';
-            overlay.style.display = 'none';
-        }
-    }
-    const label = document.getElementById('question-image-label');
-    if (label) {
-        if (label.classList.contains('hidden')) {
-            label.classList.remove('blink-last-seconds');
-        } else if (remainingMs > 0 && remainingMs <= 10000) {
-            label.classList.add('blink-last-seconds');
-        } else {
-            label.classList.remove('blink-last-seconds');
-        }
-    }
 }
 
-function refreshQuestionTimerImageRedOverlay() {
-    if (questionDeadline === null || !isAwaitingAnswer) {
-        resetQuestionImageRedOverlay();
-        syncQuestionImageWrapVisibility();
-        return;
-    }
-    const remainingMs = Math.max(0, questionDeadline - Date.now());
-    const ratio = remainingMs / (QUESTION_TIME_LIMIT * 1000);
-    updateQuestionTimerUI(remainingMs, ratio);
-    syncQuestionImageWrapVisibility();
-}
 
-function updateImageRedEffectButton() {
-    const btn = document.getElementById('admin-toggle-image-red');
-    if (!btn) return;
-    btn.textContent = `Image Red Effect: ${imageRedEffectEnabled ? 'ON' : 'OFF'}`;
-}
-
-function setImageRedEffectEnabled(value) {
-    imageRedEffectEnabled = !!value;
-    try {
-        localStorage.setItem(IMAGE_RED_EFFECT_KEY, String(imageRedEffectEnabled));
-    } catch (e) {}
-    updateImageRedEffectButton();
-    refreshQuestionTimerImageRedOverlay();
-}
 
 function startQuestionTimer() {
     stopQuestionTimer();
@@ -1380,7 +1220,6 @@ function openAdminPanel() {
     const overlay = document.getElementById('admin-overlay');
     overlay.style.display = 'flex';
     overlay.setAttribute('aria-hidden', 'false');
-    updateImageRedEffectButton();
 }
 
 function stripTrailingSlashFromNameInputs() {
@@ -1439,11 +1278,6 @@ document.addEventListener('keydown', function (e) {
 
 document.getElementById('admin-close').onclick = closeAdminPanel;
 
-document.getElementById('admin-toggle-image-red').addEventListener('click', function () {
-    setImageRedEffectEnabled(!imageRedEffectEnabled);
-});
-
-updateImageRedEffectButton();
 
 (function bootGame() {
     if (loadSavedPlayerNames()) {
