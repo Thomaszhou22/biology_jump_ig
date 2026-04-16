@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>AS 有机反应跳棋 - 深度挑战版</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>IG 生物跳棋</title>
     <style>
         body { font-family: 'PingFang SC', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; margin: 0; padding: 20px; }
         #game-layout { display: flex; gap: 30px; margin-top: 10px; }
@@ -27,6 +30,13 @@
         }
         #info-panel-header #turn-display { flex: 1; min-width: 0; }
         #question-box { border-radius: 8px; background: #f8f9fa; padding: 15px; margin: 15px 0; border-left: 5px solid #007bff; min-height: 140px; }
+        #q-image { max-width: 100%; max-height: 300px; border-radius: 6px; margin: 8px 0; display: block; margin-left: auto; margin-right: auto; cursor: zoom-in; transition: opacity 0.2s; }
+        #q-image:hover { opacity: 0.85; box-shadow: 0 0 0 3px rgba(0,123,255,0.5); }
+        .zoom-hint { text-align: center; margin-top: 4px; }
+        .zoom-btn { display: block; margin: 6px auto 0; padding: 6px 16px; border: 1px solid #ccc; border-radius: 6px; background: #f0f0f0; font-size: 13px; cursor: pointer; color: #555; }
+        .zoom-btn:hover { background: #e0e0e0; }
+        .image-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+        .image-overlay img { max-width: 95vw; max-height: 95vh; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.5); }
 
             transition: width 0.05s linear, background 0.05s linear;
             background: hsl(120, 85%, 50%);
@@ -34,8 +44,9 @@
 
             border-radius: 10px;
         }
-        .option-btn { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; transition: 0.2s; font-size: 13.5px; }
+        .option-btn { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; text-align: center; transition: 0.2s; font-size: 15px; font-weight: bold; }
         .option-btn:hover:not(:disabled) { background: #eef2f7; border-color: #007bff; }
+        .options-row { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
         .status-msg { font-weight: bold; text-align: center; padding: 10px; border-radius: 6px; margin-top: 10px; display: none; }
         .correct { background: #d4edda; color: #155724; }
         .incorrect { background: #f8d7da; color: #721c24; }
@@ -346,8 +357,8 @@
         </div>
     </div>
 
-    <h1>🧪 AS Organic Jump</h1>
-    <p style="color: #666;">注意：错误选项现在包含极其相似的试剂和条件！</p>
+    <h1>🧬 IG Biology Jump</h1>
+
 
     <div id="game-layout">
         <div id="board-container"></div>
@@ -361,6 +372,8 @@
             <div id="question-area">
                 <div id="question-box">
                     <div id="q-text">点击棋子开始移动...</div>
+                    <img id="q-image" style="display:none;" onclick="zoomImage(this.src)" />
+                    <div id="zoom-hint" class="zoom-hint" style="display:none;"><button class="zoom-btn" onclick="zoomImage(document.getElementById('q-image').src)">放大图片</button></div>
                     <div id="options"></div>
                 </div>
             </div>
@@ -373,12 +386,24 @@
     </div>
 
 <script>
-// --- 高迷惑性题库 ---
-// 每一题都手动设置了与其高度相似的干扰项 (Distractors)
+// --- IG Biology 题库 (图片模式) ---
+// img: true 表示 q 字段是图片路径
+// a: 正确答案, d: 干扰项数组
+// TODO: 填入真实答案和干扰项
 const deepQuestions = [];
 
-const WRONG_BOOK_KEY = 'organic-jump-wrong-book';
-const WRONG_BOOK_SESSION_KEY = 'organic-jump-wrong-book-session';
+function zoomImage(src) {
+    const overlay = document.createElement('div');
+    overlay.className = 'image-overlay';
+    overlay.onclick = () => overlay.remove();
+    const img = document.createElement('img');
+    img.src = src;
+    overlay.appendChild(img);
+    document.body.appendChild(overlay);
+}
+
+const WRONG_BOOK_KEY = 'ig-jump-wrong-book';
+const WRONG_BOOK_SESSION_KEY = 'ig-jump-wrong-book-session';
 
 if (!sessionStorage.getItem(WRONG_BOOK_SESSION_KEY)) {
     try {
@@ -402,7 +427,7 @@ function saveWrongBook(records) {
 }
 
 function addWrongQuestionRecord(playerSide) {
-    if (!currentQuestionItem || !Array.isArray(currentQuestionChoices) || !currentQuestionChoices.length) return;
+    if (!currentQuestionItem) return;
 
     const playerNameSnapshot = playerSide === 'red' ? String(player1Name || '') : String(player2Name || '');
 
@@ -411,7 +436,8 @@ function addWrongQuestionRecord(playerSide) {
         player: playerNameSnapshot,
         side: playerSide,
         question: currentQuestionItem.q,
-        choices: [...currentQuestionChoices],
+        img: !!currentQuestionItem.img,
+        questionIndex: deepQuestions.indexOf(currentQuestionItem) + 1,
         answer: currentQuestionItem.a,
         timestamp: Date.now()
     });
@@ -460,12 +486,9 @@ function renderWrongBook() {
         <div class="wrong-book-meta">
           <strong>#${indexInGroup + 1}</strong>
         </div>
-        <div class="wrong-book-question"><strong>Question:</strong> ${escapeHtml(item.question)}</div>
+        <div class="wrong-book-question"><strong>Q${item.questionIndex || '?'}:</strong> ${item.img ? '<img src="questions/' + escapeHtml(item.question) + '" style="max-width:200px;border-radius:4px;">' : escapeHtml(item.question)}</div>
         <div class="wrong-book-options">
-          <strong>Options:</strong>
-          <ol>
-            ${item.choices.map(choice => `<li>${escapeHtml(choice)}</li>`).join('')}
-          </ol>
+          <strong>Answer:</strong> ${escapeHtml(item.answer)}
         </div>
         <div class="wrong-book-answer"><strong>Correct Answer:</strong> ${escapeHtml(item.answer)}</div>
       </div>
@@ -716,6 +739,8 @@ function clearPendingQuestionState() {
     currentQuestionItem = null;
     currentQuestionChoices = [];
     isAwaitingAnswer = false;
+    clearQuestionDisplay();
+    document.getElementById('options').innerHTML = '';
     refreshBoardHighlights();
 }
 
@@ -728,25 +753,44 @@ function ensureQuestionLocked() {
         if (recentQuestionIndices.length > RECENT_QUESTION_WINDOW) {
             recentQuestionIndices.shift();
         }
-        currentQuestionChoices = [currentQuestionItem.a, ...currentQuestionItem.d].sort(() => 0.5 - Math.random());
+        currentQuestionChoices = [];
         isAwaitingAnswer = true;
     }
+}
+
+function clearQuestionDisplay() {
+    document.getElementById('q-image').style.display = 'none';
+    document.getElementById('zoom-hint').style.display = 'none';
 }
 
 function renderCurrentQuestion() {
     const item = currentQuestionItem;
     if (!item) return;
-    document.getElementById('q-text').innerHTML = `<b>起跳验证：</b><br>${item.q}`;
+    document.getElementById('q-text').innerHTML = item.img
+      ? `<b>起跳验证 Q${deepQuestions.indexOf(item)+1}：</b>`
+      : `<b>起跳验证：</b><br>${item.q}`;
+    const qImg = document.getElementById('q-image');
+    const hint = document.getElementById('zoom-hint');
+    if (item.img) {
+      qImg.src = 'questions/' + item.q;
+      qImg.style.display = 'block';
+      if (hint) hint.style.display = 'block';
+    } else {
+      qImg.style.display = 'none';
+      if (hint) hint.style.display = 'none';
+    }
     const opt = document.getElementById('options');
     opt.innerHTML = '';
-    currentQuestionChoices.forEach(optText => {
+    const row = document.createElement('div');
+    row.className = 'options-row';
+    ['A', 'B', 'C', 'D'].forEach(letter => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = optText;
+        btn.textContent = letter;
         btn.onclick = () => {
             if (turnLocked || gameOver) return;
             const qItem = currentQuestionItem;
-            const correct = testAllAnswersCorrect ? true : (optText === qItem.a);
+            const correct = testAllAnswersCorrect ? true : (letter === qItem.a);
             recordAnswer(correct);
             if (correct) {
                 const from = pendingMoveFrom;
@@ -855,7 +899,7 @@ function declareWinner(playerNum) {
     const name = winnerDisplayName(playerNum);
     document.getElementById('player-label').textContent = '游戏结束：' + name + ' 获胜！';
     document.getElementById('player-label').style.color = playerNum === 1 ? '#ff4757' : '#2e86de';
-    document.getElementById('q-text').textContent = '游戏已结束。';
+    clearQuestionDisplay(); document.getElementById('q-text').textContent = '游戏已结束。';
     document.getElementById('msg').style.display = 'none';
     showResultModal(playerNum);
 }
@@ -952,8 +996,10 @@ function restartGame() {
     currentPlayer = 1;
     document.getElementById('end-turn-btn').style.display = 'none';
     document.getElementById('msg').style.display = 'none';
-    document.getElementById('q-text').textContent = '点击棋子开始移动...';
+    clearQuestionDisplay(); document.getElementById('q-text').textContent = '点击棋子开始移动...';
     document.getElementById('options').innerHTML = '';
+    document.getElementById('q-image').style.display = 'none';
+    document.getElementById('zoom-hint').style.display = 'none';
     initBoard();
     updateTurnDisplay();
     refreshBoardHighlights();
@@ -1039,7 +1085,7 @@ function execute(from, to, type) {
         selectedSlot = to;
         selectedSlot.classList.add('selected');
         document.getElementById('end-turn-btn').style.display = 'block';
-        document.getElementById('q-text').textContent = "连跳模式开启！点击落点或结束。";
+        clearQuestionDisplay(); document.getElementById('q-text').textContent = "连跳模式开启！点击落点或结束。";
         document.getElementById('options').innerHTML = '';
         refreshBoardHighlights();
     }
@@ -1069,7 +1115,7 @@ function endTurn() {
     currentPlayer = currentPlayer === 1 ? 2 : 1;
     updateTurnDisplay();
     document.getElementById('end-turn-btn').style.display = 'none';
-    document.getElementById('q-text').textContent = "请选中棋子...";
+    clearQuestionDisplay(); document.getElementById('q-text').textContent = "请选中棋子...";
     document.getElementById('options').innerHTML = '';
     document.getElementById('msg').style.display = 'none';
 }
