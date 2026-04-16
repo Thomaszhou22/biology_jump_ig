@@ -27,7 +27,19 @@
         }
         #info-panel-header #turn-display { flex: 1; min-width: 0; }
         #question-box { border-radius: 8px; background: #f8f9fa; padding: 15px; margin: 15px 0; border-left: 5px solid #007bff; min-height: 140px; }
-
+        #question-timer-wrap { margin-bottom: 12px; }
+        #question-timer-wrap.hidden { display: none; }
+        #question-timer-text { font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 6px; color: #333; }
+        #question-timer-bar-outer {
+            height: 10px;
+            border-radius: 6px;
+            background: #e0e0e0;
+            overflow: hidden;
+        }
+        #question-timer-bar {
+            height: 100%;
+            width: 100%;
+            border-radius: 6px;
             transition: width 0.05s linear, background 0.05s linear;
             background: hsl(120, 85%, 50%);
         }
@@ -361,6 +373,12 @@
             <div id="question-area">
                 <div id="question-box">
                     <div id="q-text">点击棋子开始移动...</div>
+                    <div id="question-timer-wrap" class="hidden">
+                        <div id="question-timer-text">30s</div>
+                        <div id="question-timer-bar-outer">
+                            <div id="question-timer-bar"></div>
+                        </div>
+                    </div>
                     <div id="options"></div>
                 </div>
             </div>
@@ -673,6 +691,10 @@ let pendingMoveType = null;
 let currentQuestionItem = null;
 let currentQuestionChoices = [];
 let isAwaitingAnswer = false;
+let questionTimerId = null;
+let questionTimeLeft = 30;
+let questionDeadline = null;
+const QUESTION_TIME_LIMIT = 30;
 const RECENT_QUESTION_WINDOW = 5;
 let recentQuestionIndices = [];
 
@@ -697,19 +719,86 @@ function clearSelectedPiece() {
     selectedSlot = null;
 }
 
+function stopQuestionTimer() {
+    if (questionTimerId !== null) {
+        clearInterval(questionTimerId);
+        questionTimerId = null;
+    }
+    questionDeadline = null;
+}
 
-function handleQuestionWrong() {
+function showQuestionTimer() {
+    document.getElementById('question-timer-wrap').classList.remove('hidden');
+}
+
+function hideQuestionTimer() {
+    document.getElementById('question-timer-wrap').classList.add('hidden');
+    const bar = document.getElementById('question-timer-bar');
+    bar.style.width = '100%';
+    bar.style.background = 'hsl(120, 85%, 50%)';
+    document.getElementById('question-timer-text').textContent = QUESTION_TIME_LIMIT + 's';
+}
+
+function updateQuestionTimerUI(remainingMs, ratio) {
+    const sec = Math.max(0, Math.ceil(remainingMs / 1000));
+    document.getElementById('question-timer-text').textContent = sec + 's';
+    const bar = document.getElementById('question-timer-bar');
+    const r = Math.max(0, Math.min(1, ratio));
+    bar.style.width = `${r * 100}%`;
+    const hue = r * 120;
+    bar.style.background = `hsl(${hue}, 85%, 50%)`;
+}
+
+
+
+function startQuestionTimer() {
+    stopQuestionTimer();
+    questionDeadline = Date.now() + QUESTION_TIME_LIMIT * 1000;
+    showQuestionTimer();
+    const tick = () => {
+        if (gameOver || !isAwaitingAnswer) {
+            stopQuestionTimer();
+            return;
+        }
+        const now = Date.now();
+        const remainingMs = Math.max(0, questionDeadline - now);
+        const ratio = remainingMs / (QUESTION_TIME_LIMIT * 1000);
+        questionTimeLeft = remainingMs / 1000;
+        updateQuestionTimerUI(remainingMs, ratio);
+        if (remainingMs <= 0) {
+            stopQuestionTimer();
+            onQuestionTimeout();
+        }
+    };
+    tick();
+    questionTimerId = setInterval(tick, 100);
+}
+
+function onQuestionTimeout() {
+    if (gameOver || !isAwaitingAnswer || currentQuestionItem === null) return;
+    recordAnswer(false);
+    handleQuestionWrong('timeout');
+}
+
+function handleQuestionWrong(reason) {
     turnLocked = true;
-    
-const ans = currentQuestionItem ? currentQuestionItem.a : '';
+    stopQuestionTimer();
+    hideQuestionTimer();
+    const ans = currentQuestionItem ? currentQuestionItem.a : '';
     addWrongQuestionRecord(currentPlayer === 1 ? 'red' : 'blue');
     clearSelectedPiece();
     clearPendingQuestionState();
-    showMsg(`❌ 错误！正确答案是: ${ans}`, 'incorrect');
+    if (reason === 'timeout') {
+        showMsg('⏰ 时间到，判定错误。', 'incorrect');
+    } else {
+        showMsg(`❌ 错误！正确答案是: ${ans}`, 'incorrect');
+    }
     setTimeout(endTurn, 2500);
 }
 
 function clearPendingQuestionState() {
+    stopQuestionTimer();
+    hideQuestionTimer();
     pendingMoveFrom = null;
     pendingMoveTarget = null;
     pendingMoveType = null;
@@ -730,6 +819,7 @@ function ensureQuestionLocked() {
         }
         currentQuestionChoices = [currentQuestionItem.a, ...currentQuestionItem.d].sort(() => 0.5 - Math.random());
         isAwaitingAnswer = true;
+        startQuestionTimer();
     }
 }
 
@@ -745,6 +835,8 @@ function renderCurrentQuestion() {
         btn.textContent = optText;
         btn.onclick = () => {
             if (turnLocked || gameOver) return;
+            stopQuestionTimer();
+            hideQuestionTimer();
             const qItem = currentQuestionItem;
             const correct = testAllAnswersCorrect ? true : (optText === qItem.a);
             recordAnswer(correct);
@@ -758,7 +850,7 @@ function renderCurrentQuestion() {
                 showMsg("✅ 正确！移动授权成功。", "correct");
                 execute(from, to, mt);
             } else {
-                handleQuestionWrong();
+                handleQuestionWrong('wrong');
             }
         };
         opt.appendChild(btn);
