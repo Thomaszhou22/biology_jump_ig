@@ -319,6 +319,7 @@
 <body>
 
     <button type="button" id="change-names-btn">Change Names</button>
+    <button type="button" id="reselect-chapters-btn2" style="position:fixed;right:15px;top:52px;z-index:1000;padding:8px 14px;border-radius:8px;border:1px solid #d1d8e0;background:#fff;color:#333;font-size:13px;font-family:inherit;font-weight:bold;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.12);transition:background 0.2s,transform 0.2s,box-shadow 0.2s,border-color 0.2s;">选择题库</button>
     <button type="button" id="wrong-book-btn">Wrong Question Notebook</button>
 
     <div id="wrong-book-overlay" role="dialog" aria-modal="true" aria-labelledby="wrong-book-title" aria-hidden="true">
@@ -428,6 +429,7 @@
             <div class="controls">
                 <button id="end-turn-btn" class="btn-action">停止连跳 / 结束回合</button>
                 <button type="button" id="restart-btn" class="btn-action">重新开始游戏</button>
+                <button type="button" id="reselect-chapters-btn" class="btn-action" style="margin-top: 8px;">选择题库</button>
             </div>
         </div>
     </div>
@@ -1188,16 +1190,6 @@ function restartGame() {
     hideResultOverlay();
     resetStats();
     recentQuestionIndices = [];
-    // Re-shuffle if questions exist
-    if (deepQuestions.length > 0) {
-        for (let i = deepQuestions.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [deepQuestions[i], deepQuestions[j]] = [deepQuestions[j], deepQuestions[i]];
-        }
-        if (selectedQuestionCount > 0 && deepQuestions.length > selectedQuestionCount) {
-            deepQuestions.length = selectedQuestionCount;
-        }
-    }
     turnLocked = false;
     clearAllSelectedHighlights();
     selectedSlot = null;
@@ -1338,8 +1330,9 @@ function showMsg(t, c) {
 }
 
 document.getElementById('end-turn-btn').onclick = endTurn;
-document.getElementById('restart-btn').onclick = restartGame;
-document.getElementById('result-restart-btn').onclick = restartGame;
+document.getElementById('restart-btn').onclick = () => { openChapterModal(); };
+document.getElementById('reselect-chapters-btn').onclick = () => { openChapterModal(); };
+document.getElementById('reselect-chapters-btn2').onclick = () => { openChapterModal(); };
 document.getElementById('change-names-btn').onclick = function () { openNameModal(true); };
 document.getElementById('wrong-book-btn').onclick = openWrongBook;
 document.getElementById('wrong-book-clear-all').onclick = clearAllWrongBook;
