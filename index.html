@@ -1469,6 +1469,8 @@ document.getElementById('admin-close').onclick = closeAdminPanel;
         isMoving = false;
         initBoard();
         updateTurnDisplay();
+        // Ensure turn display updates after DOM is ready
+        setTimeout(() => updateTurnDisplay(), 0);
         refreshBoardHighlights();
     } else {
         openNameModal(false);
