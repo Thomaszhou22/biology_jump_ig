@@ -1361,6 +1361,10 @@ function initBoard() {
 
 function handleClick(slot) {
     if (turnLocked || gameOver) return;
+    if (deepQuestions.length === 0) {
+        showToast('请先选择题库');
+        return;
+    }
     const piece = slot.querySelector('.piece');
     if (isMoving) {
         if (!piece) tryJump(selectedSlot, slot);
@@ -1591,6 +1595,19 @@ document.getElementById('admin-close').onclick = closeAdminPanel;
         openNameModal(false);
     }
 })();
+function showToast(msg, duration = 2000) {
+    let t = document.getElementById('toast-msg');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast-msg';
+        t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.opacity = '0'; }, duration);
+}
 </script>
 </body>
 </html>
