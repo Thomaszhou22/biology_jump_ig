@@ -437,19 +437,10 @@
 // 章节目录结构: questions/{chapter}/q01.jpg, q02.jpg, ...
 // 答案文件: questions/{chapter}/answers.json  [{q: 'q01.jpg', a: 'A'}, ...]
 const QUESTION_CHAPTERS = [
-  // TODO: 随着你发 PDF，我会逐步填充章节
   { id: 'ch1_characteristics', name: 'Characteristics and Classification of Living Organisms', count: 45, answers: [
-    {a:'C'},{a:'C'},{a:'B'},{a:'B'},{a:'C'},{a:'B'},{a:'D'},{a:'B'},{a:'A'},{a:'D'},
-    {a:'D'},{a:'B'},{a:'A'},{a:'B'},{a:'C'},{a:'B'},{a:'B'},{a:'B'},{a:'A'},{a:'B'},
-    {a:'B'},{a:'C'},{a:'D'},{a:'C'},{a:'C'},{a:'C'},{a:'D'},{a:'D'},{a:'A'},{a:'B'},
-    {a:'A'},{a:'B'},{a:'C'},{a:'B'},{a:'D'},{a:'C'},{a:'C'},{a:'B'},{a:'C'},{a:'C'},
-    {a:'B'},{a:'C'},{a:'C'},{a:'A'},{a:'C'},
-    {a:'C'},{a:'B'},{a:'C'},{a:'D'},{a:'A'},{a:'B'},{a:'A'},{a:'B'},{a:'A'},{a:'B'},
-    {a:'B'},{a:'D'},{a:'C'},{a:'A'},{a:'D'},{a:'C'},{a:'D'},{a:'B'},{a:'D'},{a:'A'},
-    {a:'B'},{a:'B'},{a:'D'},{a:'A'},{a:'B'},{a:'A'},{a:'B'},{a:'B'},{a:'A'},{a:'D'},
-    {a:'B'},{a:'A'},{a:'D'},{a:'D'},{a:'D'},{a:'B'},{a:'C'},{a:'C'},{a:'A'},{a:'C'},
-    {a:'B'},{a:'B'},{a:'C'},{a:'C'},{a:'B'},
-  ]},, name: 'Organization and Maintenance of the Organism', count: 45, answers: []},
+  ]},
+  { id: 'ch2_organization', name: 'Organization and Maintenance of the Organism', count: 45, answers: [
+  ]},
 ];
 
 let deepQuestions = [];  // 游戏运行时，根据选择填充
