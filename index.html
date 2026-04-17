@@ -1119,8 +1119,8 @@ function forceRandomWinner() {
 
 function loadSavedPlayerNames() {
     try {
-        const s1 = localStorage.getItem('player1Name');
-        const s2 = localStorage.getItem('player2Name');
+        const s1 = localStorage.getItem('ig-jump-player1');
+        const s2 = localStorage.getItem('ig-jump-player2');
         const n1 = s1 != null ? String(s1).trim() : '';
         const n2 = s2 != null ? String(s2).trim() : '';
         if (n1 && n2) {
@@ -1132,10 +1132,17 @@ function loadSavedPlayerNames() {
     return false;
 }
 
+function savePlayerNamesToStorage(n1, n2) {
+    try {
+        localStorage.setItem('ig-jump-player1', n1);
+        localStorage.setItem('ig-jump-player2', n2);
+    } catch (e) {}
+}
+
 function prefillModalInputs() {
     try {
-        const s1 = localStorage.getItem('player1Name');
-        const s2 = localStorage.getItem('player2Name');
+        const s1 = localStorage.getItem('ig-jump-player1');
+        const s2 = localStorage.getItem('ig-jump-player2');
         const el1 = document.getElementById('red-name-input');
         const el2 = document.getElementById('blue-name-input');
         if (s1 != null && s1 !== '') el1.value = String(s1).trim();
@@ -1180,10 +1187,7 @@ function saveNamesOnly() {
     w.textContent = '';
     player1Name = n1;
     player2Name = n2;
-    try {
-        localStorage.setItem('player1Name', n1);
-        localStorage.setItem('player2Name', n2);
-    } catch (e) {}
+    savePlayerNamesToStorage(n1, n2);
     document.getElementById('name-modal').style.display = 'none';
     updateTurnDisplay();
 }
