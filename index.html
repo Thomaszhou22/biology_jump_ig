@@ -78,7 +78,9 @@
             box-shadow: 0 3px 12px rgba(0,0,0,0.15);
         }
         #name-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-        #name-modal .modal-box { background: #fff; padding: 28px 32px; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); min-width: 320px; max-width: 90vw; }
+        #name-modal .modal-box { background: #fff; padding: 28px 32px; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); min-width: 320px; max-width: 90vw; position: relative; }
+        #name-modal .close-x { position: absolute; top: 10px; right: 14px; background: none; border: none; font-size: 22px; cursor: pointer; color: #999; line-height: 1; padding: 0; }
+        #name-modal .close-x:hover { color: #333; }
         #name-modal .modal-box h2 { margin: 0 0 18px; font-size: 1.25rem; text-align: center; }
         #name-modal .modal-field { margin-bottom: 14px; }
         #name-modal .modal-field label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; }
@@ -355,6 +357,7 @@
 
     <div id="name-modal" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
         <div class="modal-box">
+            <button class="close-x" id="name-modal-close" type="button">✕</button>
             <h2 id="name-modal-title">输入玩家名称</h2>
             <div class="modal-field">
                 <label for="red-name-input">玩家 1（红）</label>
@@ -428,8 +431,7 @@
             <div id="msg" class="status-msg"></div>
             <div class="controls">
                 <button id="end-turn-btn" class="btn-action">停止连跳 / 结束回合</button>
-                <button type="button" id="restart-btn" class="btn-action">重新开始游戏</button>
-                <button type="button" id="reselect-chapters-btn" class="btn-action" style="margin-top: 8px;">选择题库</button>
+                <button type="button" id="reselect-chapters-btn" class="btn-action">选择题库</button>
             </div>
         </div>
     </div>
@@ -1334,10 +1336,10 @@ function showMsg(t, c) {
 }
 
 document.getElementById('end-turn-btn').onclick = endTurn;
-document.getElementById('restart-btn').onclick = () => { openChapterModal(); };
 document.getElementById('reselect-chapters-btn').onclick = () => { openChapterModal(); };
 document.getElementById('reselect-chapters-btn2').onclick = () => { openChapterModal(); };
 document.getElementById('change-names-btn').onclick = function () { openNameModal(true); };
+document.getElementById('name-modal-close').onclick = function () { document.getElementById('name-modal').style.display = 'none'; };
 document.getElementById('wrong-book-btn').onclick = openWrongBook;
 document.getElementById('wrong-book-clear-all').onclick = clearAllWrongBook;
 document.getElementById('wrong-book-close').onclick = closeWrongBook;
