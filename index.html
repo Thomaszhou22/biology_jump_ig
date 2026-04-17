@@ -287,6 +287,33 @@
             background: #ffe8e8;
             border-color: #d64545;
         }
+        /* Chapter selection modal */
+        #chapter-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 2001; }
+        #chapter-modal .modal-box { background: #fff; padding: 28px 32px; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); min-width: 360px; max-width: 90vw; max-height: 85vh; overflow-y: auto; }
+        #chapter-modal .modal-box h2 { margin: 0 0 12px; font-size: 1.25rem; text-align: center; }
+        #chapter-modal .modal-box p.desc { font-size: 0.85rem; color: #666; text-align: center; margin: 0 0 16px; }
+        .chapter-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .chapter-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid #d1d8e0; border-radius: 8px; cursor: pointer; transition: 0.15s; }
+        .chapter-item:hover { background: #f0f4ff; border-color: #007bff; }
+        .chapter-item.selected { background: #e8f0fe; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,0.2); }
+        .chapter-item input[type=checkbox] { width: 18px; height: 18px; accent-color: #007bff; cursor: pointer; flex-shrink: 0; }
+        .chapter-item .ch-name { flex: 1; font-weight: bold; font-size: 0.95rem; }
+        .chapter-item .ch-count { font-size: 0.8rem; color: #888; }
+        .quick-btns { display: flex; gap: 6px; margin-bottom: 14px; }
+        .quick-btns button { flex: 1; padding: 6px 10px; border: 1px solid #d1d8e0; border-radius: 6px; background: #f8f9fa; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
+        .quick-btns button:hover { background: #eef2f7; }
+        .quick-btns button.active { background: #e8f0fe; border-color: #007bff; color: #007bff; }
+        #question-count-field { margin-bottom: 14px; }
+        #question-count-field label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 6px; }
+        #question-count-field input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d8e0; border-radius: 8px; font-size: 15px; font-family: inherit; }
+        #question-count-field input:focus { outline: none; border-color: #007bff; }
+        #question-count-info { font-size: 0.8rem; color: #888; margin-top: 4px; }
+        #chapter-modal #start-game-btn2 { width: 100%; margin-top: 8px; padding: 12px; border: none; border-radius: 8px; background: #2f3542; color: #fff; font-weight: bold; font-size: 15px; cursor: pointer; }
+        #chapter-modal #start-game-btn2:hover { background: #1e2229; }
+        #chapter-modal #back-to-names-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1px solid #d1d8e0; border-radius: 8px; background: none; color: #666; font-weight: bold; font-size: 13px; cursor: pointer; }
+        #chapter-modal #back-to-names-btn:hover { background: #f5f5f5; }
+        #chapter-modal-warning { font-size: 0.85rem; color: #c0392b; margin-top: 10px; min-height: 1.2em; text-align: center; }
+        .no-chapters-msg { text-align: center; color: #999; padding: 20px 0; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -305,6 +332,26 @@
         </div>
     </div>
 
+    <div id="chapter-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal-box">
+            <h2>选择题库章节</h2>
+            <p class="desc">选择一个或多个章节，然后设置题量</p>
+            <div class="quick-btns">
+                <button type="button" id="sel-all-chapters">全选</button>
+                <button type="button" id="sel-none-chapters">全不选</button>
+            </div>
+            <div id="chapter-list" class="chapter-grid"></div>
+            <div id="question-count-field">
+                <label for="q-count-input">每局题目数量</label>
+                <input id="q-count-input" type="number" min="5" max="999" placeholder="例如：20">
+                <div id="question-count-info"></div>
+            </div>
+            <div id="chapter-modal-warning"></div>
+            <button type="button" id="start-game-btn2">开始游戏</button>
+            <button type="button" id="back-to-names-btn">← 返回修改名称</button>
+        </div>
+    </div>
+
     <div id="name-modal" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
         <div class="modal-box">
             <h2 id="name-modal-title">输入玩家名称</h2>
@@ -317,7 +364,7 @@
                 <input id="blue-name-input" type="text" maxlength="40" autocomplete="off" placeholder="例如：Bob">
             </div>
             <div id="name-modal-warning"></div>
-            <button type="button" id="start-game-btn">Start Game</button>
+            <button type="button" id="start-game-btn">选择题库 →</button>
         </div>
     </div>
 
@@ -387,10 +434,153 @@
 
 <script>
 // --- IG Biology 题库 (图片模式) ---
-// img: true 表示 q 字段是图片路径
-// a: 正确答案, d: 干扰项数组
-// TODO: 填入真实答案和干扰项
-const deepQuestions = [];
+// 章节目录结构: questions/{chapter}/q01.jpg, q02.jpg, ...
+// 答案文件: questions/{chapter}/answers.json  [{q: 'q01.jpg', a: 'A'}, ...]
+const QUESTION_CHAPTERS = [
+  // TODO: 随着你发 PDF，我会逐步填充章节
+  // { id: 'chapter1', name: 'Chapter 1 - 名称' },
+];
+
+let deepQuestions = [];  // 游戏运行时，根据选择填充
+let selectedQuestionCount = 0;  // 每局题量，0 = 不限
+let activeChapters = [];  // 本次游戏选中的章节
+
+// 从 chapters 加载题目到 deepQuestions
+function loadQuestionsFromChapters(chapterIds, maxCount) {
+    deepQuestions = [];
+    activeChapters = chapterIds;
+    for (const ch of QUESTION_CHAPTERS) {
+        if (!chapterIds.includes(ch.id)) continue;
+        const count = ch.count || 0;
+        for (let i = 1; i <= count; i++) {
+            const num = String(i).padStart(2, '0');
+            const qPath = ch.id + '/q' + num + '.jpg';
+            const ans = ch.answers ? ch.answers[i - 1] : null;
+            deepQuestions.push({
+                q: qPath,
+                img: true,
+                a: ans ? ans.a : '?',
+                chapter: ch.name
+            });
+        }
+    }
+    // Shuffle
+    for (let i = deepQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deepQuestions[i], deepQuestions[j]] = [deepQuestions[j], deepQuestions[i]];
+    }
+    if (maxCount > 0 && deepQuestions.length > maxCount) {
+        deepQuestions.length = maxCount;
+    }
+}
+
+function renderChapterList() {
+    const container = document.getElementById('chapter-list');
+    if (!QUESTION_CHAPTERS.length) {
+        container.innerHTML = '<div class="no-chapters-msg">暂无题库章节，请等待题目添加。</div>';
+        document.getElementById('question-count-info').textContent = '';
+        return;
+    }
+    container.innerHTML = QUESTION_CHAPTERS.map(ch => {
+        const count = ch.count || 0;
+        return `<div class="chapter-item" data-id="${ch.id}">
+            <input type="checkbox" id="ch-${ch.id}" value="${ch.id}">
+            <span class="ch-name">${ch.name}</span>
+            <span class="ch-count">${count} 题</span>
+        </div>`;
+    }).join('');
+    // Click handler for items
+    container.querySelectorAll('.chapter-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            const cb = item.querySelector('input[type=checkbox]');
+            cb.checked = !cb.checked;
+            item.classList.toggle('selected', cb.checked);
+            updateChapterCountInfo();
+        });
+        item.querySelector('input[type=checkbox]').addEventListener('change', (e) => {
+            item.classList.toggle('selected', e.target.checked);
+            updateChapterCountInfo();
+        });
+    });
+    document.getElementById('sel-all-chapters').onclick = () => {
+        container.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = true; });
+        container.querySelectorAll('.chapter-item').forEach(el => el.classList.add('selected'));
+        updateChapterCountInfo();
+    };
+    document.getElementById('sel-none-chapters').onclick = () => {
+        container.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; });
+        container.querySelectorAll('.chapter-item').forEach(el => el.classList.remove('selected'));
+        updateChapterCountInfo();
+    };
+    updateChapterCountInfo();
+}
+
+function updateChapterCountInfo() {
+    const checked = document.querySelectorAll('#chapter-list input[type=checkbox]:checked');
+    let total = 0;
+    checked.forEach(cb => {
+        const ch = QUESTION_CHAPTERS.find(c => c.id === cb.value);
+        if (ch) total += (ch.count || 0);
+    });
+    const info = document.getElementById('question-count-info');
+    const countInput = document.getElementById('q-count-input');
+    if (total === 0) {
+        info.textContent = '请至少选择一个章节';
+    } else {
+        info.textContent = `已选 ${total} 道题${total > 0 ? '，留空则使用全部' : ''}`;
+    }
+    // Set default max
+    countInput.max = total || 999;
+}
+
+function openChapterModal() {
+    renderChapterList();
+    document.getElementById('chapter-modal').style.display = 'flex';
+    document.getElementById('chapter-modal').setAttribute('aria-hidden', 'false');
+    document.getElementById('chapter-modal-warning').textContent = '';
+}
+
+function closeChapterModal() {
+    document.getElementById('chapter-modal').style.display = 'none';
+    document.getElementById('chapter-modal').setAttribute('aria-hidden', 'true');
+}
+
+function confirmChapterSelection() {
+    const w = document.getElementById('chapter-modal-warning');
+    const checked = document.querySelectorAll('#chapter-list input[type=checkbox]:checked');
+    if (checked.length === 0) {
+        w.textContent = '请至少选择一个章节！';
+        return;
+    }
+    const chapterIds = Array.from(checked).map(cb => cb.value);
+    const maxCount = parseInt(document.getElementById('q-count-input').value) || 0;
+    if (maxCount < 0) {
+        w.textContent = '题量不能为负数';
+        return;
+    }
+    // Count total
+    let total = 0;
+    chapterIds.forEach(id => {
+        const ch = QUESTION_CHAPTERS.find(c => c.id === id);
+        if (ch) total += (ch.count || 0);
+    });
+    if (maxCount > total) {
+        w.textContent = `题量（${maxCount}）超过已选总题数（${total}）`; 
+        return;
+    }
+    selectedQuestionCount = maxCount;
+    loadQuestionsFromChapters(chapterIds, maxCount);
+    w.textContent = '';
+    closeChapterModal();
+    document.getElementById('name-modal').style.display = 'none';
+    restartGame();
+}
+
+document.getElementById('start-game-btn2').onclick = confirmChapterSelection;
+document.getElementById('back-to-names-btn').onclick = () => {
+    closeChapterModal();
+};
 
 function zoomImage(src) {
     const overlay = document.createElement('div');
@@ -772,7 +962,7 @@ function renderCurrentQuestion() {
     const qImg = document.getElementById('q-image');
     const hint = document.getElementById('zoom-hint');
     if (item.img) {
-      qImg.src = 'questions/' + item.q;
+      qImg.src = 'questions/' + item.q.replace('\n','');
       qImg.style.display = 'block';
       if (hint) hint.style.display = 'block';
     } else {
@@ -979,13 +1169,23 @@ function confirmNameModal() {
         localStorage.setItem('player2Name', n2);
     } catch (e) {}
     document.getElementById('name-modal').style.display = 'none';
-    restartGame();
+    openChapterModal();
 }
 
 function restartGame() {
     hideResultOverlay();
     resetStats();
     recentQuestionIndices = [];
+    // Re-shuffle if questions exist
+    if (deepQuestions.length > 0) {
+        for (let i = deepQuestions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deepQuestions[i], deepQuestions[j]] = [deepQuestions[j], deepQuestions[i]];
+        }
+        if (selectedQuestionCount > 0 && deepQuestions.length > selectedQuestionCount) {
+            deepQuestions.length = selectedQuestionCount;
+        }
+    }
     turnLocked = false;
     clearAllSelectedHighlights();
     selectedSlot = null;
