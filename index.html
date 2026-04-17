@@ -365,7 +365,7 @@
                 <input id="blue-name-input" type="text" maxlength="40" autocomplete="off" placeholder="例如：Bob">
             </div>
             <div id="name-modal-warning"></div>
-            <button type="button" id="start-game-btn">选择题库 →</button>
+            <button type="button" id="start-game-btn">Start Game</button>
         </div>
     </div>
 
@@ -1183,7 +1183,11 @@ function confirmNameModal() {
         localStorage.setItem('player2Name', n2);
     } catch (e) {}
     document.getElementById('name-modal').style.display = 'none';
-    openChapterModal();
+    if (deepQuestions.length > 0) {
+        restartGame();
+    } else {
+        openChapterModal();
+    }
 }
 
 function restartGame() {
