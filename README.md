@@ -1,78 +1,62 @@
-# Biology Jump（A Level IG 生物跳棋）
+# 🧬 IG Biology Jump — IGCSE 生物跳棋
 
-浏览器单文件游戏：`index.html`，用本地方式打开即可游玩（建议现代 Chrome / Edge / Safari）。
+一个基于棋盘的互动学习工具，专为 **Cambridge IGCSE Biology (0610)** 设计。两名玩家通过跳棋对弈的方式答题，让复习变得有趣！
 
----
+## 🌐 在线体验
 
-## 游戏玩法与胜利条件
+- **Vercel**: [biologyjumpig.vercel.app](https://biologyjumpig.vercel.app)
+- **GitHub Pages**: [thomaszhou22.github.io/biology_jump_ig](https://thomaszhou22.github.io/biology_jump_ig/)
 
-- **棋盘**：7 行六角跳棋式布局（约 37 格）。玩家 1（红）在上方两行开局，玩家 2（蓝）在下方两行开局。
-- **走子**：先选中己方棋子，再点目标格。可走**邻格**一步，或**隔子跳**到落点空位；连跳时同一枚子可连续跳，点 **「停止连跳 / 结束回合」** 后轮到对方。
-- **答题**：发起移动前会弹出随机 A Level IG 生物题（四选一：一个正确选项 + 三个干扰项）；答对后才能落子。答错可记入错题本（见 **Wrong Question Notebook**）。管理员可开「All Answers Correct」跳过判题（仅调试用）。
-- **胜利条件**：己方**全部**棋子都到达或越过**中线**即获胜。中线为最中间一行（行号 `r === 3`，最宽那一行）。**踩在中线也算过线**：
-  - 红方：9 枚子全部落在 **`r ≥ 3`** 的格子；
-  - 蓝方：9 枚子全部落在 **`r ≤ 3`** 的格子。
+## ✨ 功能特色
 
----
+### 🎮 游戏玩法
+- **双人跳棋对弈**：两名玩家轮流掷骰子、走棋子、答题
+- **答对前进，答错停留**：回答正确可以移动到目标格子，回答错误则原地不动
+- **自动判分**：系统自动判断答案对错，无需手动核对
 
-## 题库
+### 📚 完整题库（744 道选择题）
+涵盖 Cambridge IGCSE Biology 全部 21 个章节：
 
-题目数据在 `index.html` 内脚本常量 **`deepQuestions`** 中，每项为 `{ q, a, d }`（题干、正确答案、三个错误选项）。更新题库时直接编辑该数组即可。
+| 章节 | 主题 | 题数 |
+|------|------|------|
+| Ch 1 | Characteristics and Classification of Living Organisms | 45 |
+| Ch 2 | Organization and Maintenance of the Organism | 45 |
+| Ch 3 | Movement in and out of Cells | 45 |
+| Ch 4 | Biological Molecules | 33 |
+| Ch 5 | Enzymes | 26 |
+| Ch 6 | Plant Nutrition | 32 |
+| Ch 7 | Human Nutrition | 36 |
+| Ch 8 | Transport in Plants | 37 |
+| Ch 9 | Transport in Animals | 34 |
+| Ch 10 | Diseases and Immunity | 27 |
+| Ch 11 | Gas Exchange in Humans | 27 |
+| Ch 12 | Respiration | 32 |
+| Ch 13 | Excretion in Humans | 30 |
+| Ch 14 | Coordination and Response | 49 |
+| Ch 15 | Drugs | 28 |
+| Ch 16 | Reproduction | 41 |
+| Ch 17 | Inheritance | 41 |
+| Ch 18 | Variation and Selection | 40 |
+| Ch 19 | Organisms and their Environment | 50 |
+| Ch 20 | Biotechnology and Genetic Engineering | 45 |
+| Ch 21 | Human Influences on Ecosystems | 34 |
 
-> ⚠️ 当前仓库为**空白题库版本**，需要自行添加 A Level IG 生物相关题目。
+### 🧩 章节选择
+- **自由选题**：支持选择任意章节组合进行练习
+- **题量设置**：可自定义每章抽取的题目数量
+- **随时切换**：游戏中的"选择题库"按钮可随时重新选择章节
 
----
+### 📝 学习辅助
+- **错题本**：自动记录答错的题目，方便针对性复习
+- **移动提示**：可选显示每回合允许移动的格数提示
+- **答题计时**：每道题附带计时器，训练做题速度
+- **全对模式**：可选开启，要求所有题目全部答对才能获胜
 
-## 管理员系统（重点）
+### 👤 个性化
+- **玩家名称**：自定义两名玩家的名称，名称会自动保存到本地
+- **刷新不丢失**：玩家名称通过 localStorage 持久化存储
 
-管理员面板用于调试与辅助选项，**默认隐藏**，需按下方方式进入。
-
-### 如何打开管理员面板
-
-在 **玩家名称输入框**（红方 `#red-name-input` 或 蓝方 `#blue-name-input`）中满足其一后操作：
-
-| 方式 | 说明 |
-|------|------|
-| **仅输入 `/` 后按 Enter** | 打开管理员；**不会**把 `/` 存为名字 |
-| **在任意名字后加 `/` 再按 Enter**（例如 `Alice/`） | 同样打开管理员；关闭面板后，输入框里末尾的 `/` 会被自动去掉 |
-| **点击「Start Game」** | 若某一栏内容为「仅 `/`」或「以 `/` 结尾的名字」，则**只打开管理员**，不开始游戏、不写入存档 |
-
-以上方式在 **首次输入名称** 与 **之后通过「Change Names」修改名称** 时均有效。
-
-### 关闭管理员面板
-
-- 点击 **Close**
-- 点击 **半透明遮罩**（面板外的暗色区域）
-- 按键盘 **Esc**（若错题本未打开时，优先关闭管理员）
-
-关闭时若因「名字/`」触发，会按规则清理末尾 `/`。
-
----
-
-### 管理员面板内有哪些功能
-
-面板为全屏半透明遮罩 + 居中白色按钮区，从上到下依次为：
-
-1. **Test Random Winner** — 随机指定一方获胜（用于快速看结算界面等）。
-2. **All Answers Correct** — 开关：**ON** 时本题作答一律视为正确（测试用）。
-3. **Hints** — 开关：是否显示可走步/可跳位置的提示。
-4. **Image Red Effect** — 答题倒计时期间头像装饰效果（默认关闭）。
-5. **Close** — 关闭管理员面板。
-
----
-
-## 其他功能
-
-| 入口 | 作用 |
-|------|------|
-| **Wrong Question Notebook** | 查看本会话内答错的题目；**Clean all** 会二次确认后清空 |
-| **Change Names** | 打开改名弹窗 |
-
----
-
-
----
-
-## 许可与修改
-
-直接编辑 `index.html` 即可修改游戏逻辑或题库。
+### 🔧 其他
+- **管理员面板**：隐藏管理功能（通过特殊名称触发）
+- **纯前端**：无需后端服务器，打开即用
+- **响应式设计**：支持电脑和平板访问
