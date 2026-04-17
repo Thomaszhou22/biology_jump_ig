@@ -368,6 +368,7 @@
                 <input id="blue-name-input" type="text" maxlength="40" autocomplete="off" placeholder="例如：Bob">
             </div>
             <div id="name-modal-warning"></div>
+            <button type="button" id="save-names-btn" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:8px;background:#2f3542;color:#fff;font-weight:bold;font-size:15px;cursor:pointer;">保存名称</button>
         </div>
     </div>
 
@@ -1161,7 +1162,7 @@ function nameInputTriggersAdmin(trimmed) {
     return trimmed === '/' || (trimmed.length > 1 && trimmed.endsWith('/'));
 }
 
-function confirmNameModal() {
+function saveNamesOnly() {
     const w = document.getElementById('name-modal-warning');
     const redIn = document.getElementById('red-name-input');
     const blueIn = document.getElementById('blue-name-input');
@@ -1173,7 +1174,7 @@ function confirmNameModal() {
         return;
     }
     if (!n1 || !n2) {
-        w.textContent = '请填写双方名称后再开始。';
+        w.textContent = '请填写双方名称。';
         return;
     }
     w.textContent = '';
@@ -1184,6 +1185,11 @@ function confirmNameModal() {
         localStorage.setItem('player2Name', n2);
     } catch (e) {}
     document.getElementById('name-modal').style.display = 'none';
+    updateTurnDisplay();
+}
+
+function confirmNameModal() {
+    saveNamesOnly();
     if (deepQuestions.length > 0) {
         restartGame();
     } else {
@@ -1378,6 +1384,7 @@ document.getElementById('toggle-move-hints-btn').onclick = function () {
 };
 updateMoveHintsButton();
 
+document.getElementById('save-names-btn').onclick = saveNamesOnly;
 document.getElementById('start-game-btn').onclick = confirmNameModal;
 
 function openAdminPanel() {
