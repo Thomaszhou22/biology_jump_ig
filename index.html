@@ -87,6 +87,38 @@
             background: #c8e6c9;
             border-color: #2e7d32;
         }
+        #preload-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 5000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 16px;
+            color: #333;
+        }
+        #preload-overlay .preload-bar {
+            width: 320px;
+            max-width: 80vw;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        #preload-overlay .preload-fill {
+            height: 100%;
+            background: #28a745;
+            border-radius: 6px;
+            transition: width 0.15s;
+            width: 0%;
+        }
+        #preload-overlay .preload-text {
+            font-size: 14px;
+            color: #666;
+        }
         #wrong-book-btn {
             position: fixed;
             right: 15px;
@@ -306,6 +338,11 @@
         </div>
     </div>
 
+<div id="preload-overlay">
+    <div style="font-weight:bold;">正在加载题目图片...</div>
+    <div class="preload-bar"><div class="preload-fill"></div></div>
+    <div class="preload-text">已加载 0 / 0</div>
+</div>
 <script>
 // --- IG Biology 题库 ---
 const QUESTION_CHAPTERS = [
@@ -610,7 +647,41 @@ function confirmChapterSelection() {
     loadQuestionsFromChapters(chapterIds, maxCount);
     w.textContent = '';
     closeChapterModal();
-    startQuiz();
+    preloadImagesAndStart();
+}
+
+function preloadImagesAndStart() {
+    const overlay = document.getElementById('preload-overlay');
+    const fill = overlay.querySelector('.preload-fill');
+    const text = overlay.querySelector('.preload-text');
+    overlay.style.display = 'flex';
+    // Disable all buttons
+    document.querySelectorAll('button').forEach(b => b.disabled = true);
+
+    const total = deepQuestions.length;
+    let loaded = 0;
+    if (total === 0) {
+        overlay.style.display = 'none';
+        document.querySelectorAll('button').forEach(b => b.disabled = false);
+        startQuiz();
+        return;
+    }
+    deepQuestions.forEach(item => {
+        if (!item.img) { loaded++; return; }
+        const img = new Image();
+        img.onload = img.onerror = function() {
+            loaded++;
+            const pct = Math.round((loaded / total) * 100);
+            fill.style.width = pct + '%';
+            text.textContent = '已加载 ' + loaded + ' / ' + total;
+            if (loaded === total) {
+                overlay.style.display = 'none';
+                document.querySelectorAll('button').forEach(b => b.disabled = false);
+                startQuiz();
+            }
+        };
+        img.src = 'questions/' + item.q.replace('\n', '');
+    });
 }
 
 function startQuiz() {
