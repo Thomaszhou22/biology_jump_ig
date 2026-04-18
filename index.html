@@ -692,13 +692,13 @@ function handleAnswer(letter, clickedBtn) {
     }
 
     updateScoreDisplay();
-    saveProgress();
 
     // Auto-advance after delay
     setTimeout(() => {
         hideMsg();
         questionIndex++;
         showNextQuestion();
+        saveProgress();
     }, 1500);
 }
 
