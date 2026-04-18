@@ -5,22 +5,10 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>IG 生物跳棋</title>
+    <title>IG 生物答题</title>
     <style>
         body { font-family: 'PingFang SC', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; margin: 0; padding: 20px; }
-        #game-layout { display: flex; gap: 30px; margin-top: 10px; }
-        #board-container { background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 2px solid #d1d8e0; }
-        .row { display: flex; justify-content: center; margin: -6px 0; }
-        .slot { width: 40px; height: 40px; border-radius: 50%; background: #f1f2f6; margin: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; border: 2px solid transparent; }
-        .slot:hover { background: #dfe4ea; }
-        .slot.selected { border-color: #2f3542; background: #ced6e0; box-shadow: 0 0 10px rgba(0,0,0,0.2); z-index: 10; }
-        .slot.jump-debug { outline: 3px solid orange; box-shadow: 0 0 10px orange; }
-        .slot.walk-debug { outline: 2px solid limegreen; }
-        .slot.pending-target { outline: 2px solid #007bff; box-shadow: 0 0 8px rgba(0, 123, 255, 0.45); z-index: 5; }
-        .piece { width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,0.2); pointer-events: none; }
-        .p1 { background: radial-gradient(circle at 30% 30%, #ff4757, #ff6b81); }
-        .p2 { background: radial-gradient(circle at 30% 30%, #2e86de, #54a0ff); }
-        #info-panel { width: 380px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        #info-panel { width: 560px; max-width: 95vw; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; margin-top: 10px; }
         #info-panel-header {
             display: flex;
             align-items: center;
@@ -28,7 +16,6 @@
             gap: 12px;
             margin-bottom: 2px;
         }
-        #info-panel-header #turn-display { flex: 1; min-width: 0; }
         #question-box { border-radius: 8px; background: #f8f9fa; padding: 15px; margin: 15px 0; border-left: 5px solid #007bff; min-height: 140px; }
         #q-image { max-width: 100%; max-height: 300px; border-radius: 6px; margin: 8px 0; display: block; margin-left: auto; margin-right: auto; cursor: zoom-in; transition: opacity 0.2s; }
         #q-image:hover { opacity: 0.85; box-shadow: 0 0 0 3px rgba(0,123,255,0.5); }
@@ -37,100 +24,25 @@
         .zoom-btn:hover { background: #e0e0e0; }
         .image-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
         .image-overlay img { max-width: 95vw; max-height: 95vh; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.5); }
-
-            transition: width 0.05s linear, background 0.05s linear;
-            background: hsl(120, 85%, 50%);
-        }
-
-            border-radius: 10px;
-        }
         .option-btn { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; text-align: center; transition: 0.2s; font-size: 15px; font-weight: bold; }
         .option-btn:hover:not(:disabled) { background: #eef2f7; border-color: #007bff; }
+        .option-btn:disabled { cursor: default; opacity: 0.7; }
+        .option-btn.correct-answer { background: #d4edda; border-color: #28a745; color: #155724; }
+        .option-btn.wrong-answer { background: #f8d7da; border-color: #dc3545; color: #721c24; }
         .options-row { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
         .status-msg { font-weight: bold; text-align: center; padding: 10px; border-radius: 6px; margin-top: 10px; display: none; }
         .correct { background: #d4edda; color: #155724; }
         .incorrect { background: #f8d7da; color: #721c24; }
         .controls { margin-top: auto; padding-top: 20px; }
         .btn-action { width: 100%; padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; }
-        #end-turn-btn { background: #2f3542; color: white; display: none; margin-bottom: 20px; }
-        #restart-btn { background: none; border: 1px solid #d1d8e0; color: #999; font-size: 12px; margin-top: 60px; }
-        #restart-btn:hover { color: #ff4757; border-color: #ff4757; background: #fff5f5; }
-        #change-names-btn {
-            position: fixed;
-            right: 15px;
-            top: 15px;
-            z-index: 1000;
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: 1px solid #d1d8e0;
-            background: #fff;
-            color: #333;
-            font-size: 13px;
-            font-family: inherit;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-            transition: background 0.2s, transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-        }
-        #change-names-btn:hover {
-            background: #eef2f7;
-            transform: scale(1.05);
-            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
-        }
-        #name-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 2000; }
-        #name-modal .modal-box { background: #fff; padding: 28px 32px; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); min-width: 320px; max-width: 90vw; position: relative; }
-        #name-modal .close-x { position: absolute; top: 10px; right: 14px; background: none; border: none; font-size: 22px; cursor: pointer; color: #999; line-height: 1; padding: 0; }
-        #name-modal .close-x:hover { color: #333; }
-        #name-modal .modal-box h2 { margin: 0 0 18px; font-size: 1.25rem; text-align: center; }
-        #name-modal .modal-field { margin-bottom: 14px; }
-        #name-modal .modal-field label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; }
-        #name-modal .modal-field input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d8e0; border-radius: 8px; font-size: 15px; font-family: inherit; }
-        #name-modal .modal-field input:focus { outline: none; border-color: #007bff; }
-        #name-modal #start-game-btn { width: 100%; margin-top: 8px; padding: 12px; border: none; border-radius: 8px; background: #2f3542; color: #fff; font-weight: bold; font-size: 15px; cursor: pointer; }
-        #name-modal #start-game-btn:hover { background: #1e2229; }
-        #name-modal-warning { font-size: 13px; color: #c0392b; margin-top: 10px; min-height: 1.2em; text-align: center; }
-        #result-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.55);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        #result-modal {
-            background: #fff;
-            border-radius: 16px;
-            padding: 28px 32px;
-            max-width: 420px;
-            width: 100%;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.22);
-        }
-        #result-modal h2 { margin: 0 0 12px; font-size: 1.4rem; text-align: center; }
-        .result-winner-line { font-size: 1.15rem; font-weight: bold; text-align: center; margin: 0 0 20px; color: #2f3542; }
-        .result-stats-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 22px; }
-        .player-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 12px 16px;
-        }
-        .player1-card {
-            border-left: 6px solid #ff4d6d;
-            box-shadow: 0 1px 8px rgba(255, 77, 109, 0.12);
-        }
-        .player2-card {
-            border-left: 6px solid #4a90e2;
-            box-shadow: 0 1px 8px rgba(74, 144, 226, 0.12);
-        }
-        .player-card h3 { margin: 0 0 8px; font-size: 0.95rem; font-weight: bold; }
-        .player1-card h3 { color: #ff4757; }
-        .player2-card h3 { color: #2e86de; }
-        .player-card ul { margin: 0; padding-left: 18px; color: #444; font-size: 0.9rem; line-height: 1.6; }
-        .result-acc { list-style: none; margin-left: -18px; padding-left: 0; color: #666; font-size: 0.85rem; margin-top: 4px; }
-        #result-restart-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #2f3542; color: #fff; font-weight: bold; font-size: 15px; cursor: pointer; }
-        #result-restart-btn:hover { background: #1e2229; }
+        .btn-action:hover { opacity: 0.9; }
+        .progress-bar { width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: #28a745; border-radius: 4px; transition: width 0.3s; }
+        .score-display { display: flex; justify-content: center; gap: 24px; font-size: 14px; color: #555; margin-top: 8px; }
+        .score-display span { font-weight: bold; }
+        .score-display .correct-count { color: #155724; }
+        .score-display .wrong-count { color: #721c24; }
+        .score-display .total-count { color: #007bff; }
         #admin-overlay {
             position: fixed;
             inset: 0;
@@ -178,7 +90,7 @@
         #wrong-book-btn {
             position: fixed;
             right: 15px;
-            top: 52px;
+            top: 15px;
             z-index: 1000;
             padding: 8px 14px;
             border-radius: 8px;
@@ -220,12 +132,8 @@
         }
         #wrong-book-panel h2 { margin: 0 0 16px; font-size: 1.25rem; text-align: center; }
         #wrong-book-list { margin-bottom: 16px; }
-        .wrong-book-section {
-            margin-bottom: 22px;
-        }
-        .wrong-book-section:last-child {
-            margin-bottom: 0;
-        }
+        .wrong-book-section { margin-bottom: 22px; }
+        .wrong-book-section:last-child { margin-bottom: 0; }
         .wrong-book-section-title {
             font-size: 1.05rem;
             font-weight: bold;
@@ -235,12 +143,7 @@
             border-bottom: 2px solid #e0e6ed;
             text-align: left;
         }
-        .wrong-book-count {
-            font-weight: normal;
-            color: #666;
-            font-size: 0.9rem;
-            margin-left: 6px;
-        }
+        .wrong-book-count { font-weight: normal; color: #666; font-size: 0.9rem; margin-left: 6px; }
         .wrong-book-item {
             border: 1px solid #ddd;
             border-radius: 12px;
@@ -249,24 +152,13 @@
             text-align: left;
         }
         .wrong-book-section-items .wrong-book-item:last-child { margin-bottom: 0; }
-        .wrong-book-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: baseline;
-            margin-bottom: 10px;
-            font-size: 0.95rem;
-        }
+        .wrong-book-meta { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; margin-bottom: 10px; font-size: 0.95rem; }
         .wrong-book-item .wrong-book-meta strong { margin-right: 6px; }
         .wrong-book-question { margin-bottom: 10px; }
         .wrong-book-options { margin-bottom: 10px; }
         .wrong-book-options ol { margin: 6px 0 0; padding-left: 1.4em; }
         .wrong-book-answer { font-size: 0.95rem; }
-        .wrong-book-footer-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+        .wrong-book-footer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .wrong-book-footer-actions button {
             flex: 1;
             min-width: 120px;
@@ -280,15 +172,8 @@
             cursor: pointer;
         }
         .wrong-book-footer-actions button:hover { background: #eef2f7; }
-        #wrong-book-clear-all {
-            border-color: #e8b4b4;
-            background: #fff5f5;
-            color: #a61e1e;
-        }
-        #wrong-book-clear-all:hover {
-            background: #ffe8e8;
-            border-color: #d64545;
-        }
+        #wrong-book-clear-all { border-color: #e8b4b4; background: #fff5f5; color: #a61e1e; }
+        #wrong-book-clear-all:hover { background: #ffe8e8; border-color: #d64545; }
         /* Chapter selection modal */
         #chapter-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 2001; }
         #chapter-modal .modal-box { background: #fff; padding: 28px 32px; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); min-width: 360px; max-width: 90vw; max-height: 85vh; overflow-y: auto; }
@@ -316,21 +201,38 @@
         #chapter-modal #back-to-names-btn:hover { background: #f5f5f5; }
         #chapter-modal-warning { font-size: 0.85rem; color: #c0392b; margin-top: 10px; min-height: 1.2em; text-align: center; }
         .no-chapters-msg { text-align: center; color: #999; padding: 20px 0; font-size: 0.9rem; }
+        #finish-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            display: none; align-items: center; justify-content: center;
+            z-index: 3000; padding: 20px; box-sizing: border-box;
+        }
+        #finish-modal {
+            background: #fff; border-radius: 16px; padding: 28px 32px;
+            max-width: 420px; width: 100%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.22); text-align: center;
+        }
+        #finish-modal h2 { margin: 0 0 16px; font-size: 1.4rem; }
+        #finish-modal .stat-line { font-size: 1.1rem; margin: 8px 0; color: #333; }
+        #finish-modal .stat-line span { font-weight: bold; }
+        #finish-modal #finish-restart-btn {
+            width: 100%; margin-top: 20px; padding: 12px; border: none;
+            border-radius: 8px; background: #2f3542; color: #fff;
+            font-weight: bold; font-size: 15px; cursor: pointer;
+        }
+        #finish-modal #finish-restart-btn:hover { background: #1e2229; }
     </style>
 </head>
 <body>
 
-    <button type="button" id="change-names-btn">Change Names</button>
-    <button type="button" id="reselect-chapters-btn2" style="position:fixed;right:15px;top:52px;z-index:1000;padding:8px 14px;border-radius:8px;border:1px solid #d1d8e0;background:#fff;color:#333;font-size:13px;font-family:inherit;font-weight:bold;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.12);transition:background 0.2s,transform 0.2s,box-shadow 0.2s,border-color 0.2s;">选择题库</button>
-    <button type="button" id="wrong-book-btn">Wrong Question Notebook</button>
+    <button type="button" id="wrong-book-btn">错题本</button>
 
     <div id="wrong-book-overlay" role="dialog" aria-modal="true" aria-labelledby="wrong-book-title" aria-hidden="true">
         <div id="wrong-book-panel">
-            <h2 id="wrong-book-title">Wrong Question Notebook</h2>
+            <h2 id="wrong-book-title">错题本</h2>
             <div id="wrong-book-list"></div>
             <div class="wrong-book-footer-actions">
-                <button type="button" id="wrong-book-clear-all">Clean all</button>
-                <button type="button" id="wrong-book-close">Close</button>
+                <button type="button" id="wrong-book-clear-all">清空全部</button>
+                <button type="button" id="wrong-book-close">关闭</button>
             </div>
         </div>
     </div>
@@ -345,102 +247,66 @@
             </div>
             <div id="chapter-list" class="chapter-grid"></div>
             <div id="question-count-field">
-                <label for="q-count-input">每局题目数量</label>
-                <input id="q-count-input" type="number" min="5" max="999" placeholder="例如：20">
+                <label for="q-count-input">题目数量</label>
+                <input id="q-count-input" type="number" min="5" max="999" placeholder="例如：20（留空则使用全部）">
                 <div id="question-count-info"></div>
             </div>
             <div id="chapter-modal-warning"></div>
-            <button type="button" id="start-game-btn2">开始游戏</button>
+            <button type="button" id="start-game-btn2">开始答题</button>
             <button type="button" id="back-to-names-btn">← 关闭</button>
         </div>
     </div>
 
-    <div id="name-modal" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
-        <div class="modal-box">
-            <button class="close-x" id="name-modal-close" type="button">✕</button>
-            <h2 id="name-modal-title">输入玩家名称</h2>
-            <div class="modal-field">
-                <label for="red-name-input">玩家 1（红）</label>
-                <input id="red-name-input" type="text" maxlength="40" autocomplete="off" placeholder="例如：Alice">
-            </div>
-            <div class="modal-field">
-                <label for="blue-name-input">玩家 2（蓝）</label>
-                <input id="blue-name-input" type="text" maxlength="40" autocomplete="off" placeholder="例如：Bob">
-            </div>
-            <div id="name-modal-warning"></div>
-            <button type="button" id="save-names-btn" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:8px;background:#2f3542;color:#fff;font-weight:bold;font-size:15px;cursor:pointer;">保存名称</button>
-        </div>
-    </div>
-
-    <div id="result-overlay" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-hidden="true">
-        <div id="result-modal">
-            <h2 id="result-title">游戏结算</h2>
-            <p id="winner-name" class="result-winner-line"></p>
-            <div class="result-stats-grid">
-                <div class="player-card player1-card">
-                    <h3 id="result-p1-name"></h3>
-                    <ul>
-                        <li>作答：<span id="p1-answered">0</span></li>
-                        <li>错误：<span id="p1-wrong">0</span></li>
-                        <li id="p1-acc-line" class="result-acc">正确率：—</li>
-                    </ul>
-                </div>
-                <div class="player-card player2-card">
-                    <h3 id="result-p2-name"></h3>
-                    <ul>
-                        <li>作答：<span id="p2-answered">0</span></li>
-                        <li>错误：<span id="p2-wrong">0</span></li>
-                        <li id="p2-acc-line" class="result-acc">正确率：—</li>
-                    </ul>
-                </div>
-            </div>
-            <button type="button" id="result-restart-btn">重新开始游戏</button>
+    <div id="finish-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div id="finish-modal">
+            <h2>答题完成 🎉</h2>
+            <p class="stat-line">总题数：<span id="finish-total">0</span></p>
+            <p class="stat-line">正确：<span id="finish-correct" style="color:#155724">0</span></p>
+            <p class="stat-line">错误：<span id="finish-wrong" style="color:#721c24">0</span></p>
+            <p class="stat-line">正确率：<span id="finish-acc">—</span></p>
+            <button type="button" id="finish-restart-btn">重新选择题库</button>
         </div>
     </div>
 
     <div id="admin-overlay" role="dialog" aria-modal="true" aria-label="Admin" aria-hidden="true">
         <div id="admin-panel">
-            <button type="button" id="test-random-winner-btn">Test Random Winner</button>
             <button type="button" id="toggle-answer-test-btn">All Answers Correct: OFF</button>
-            <button type="button" id="toggle-move-hints-btn">Hints: ON</button>
-
             <button type="button" id="admin-close">Close</button>
         </div>
     </div>
 
-    <h1>🧬 IG Biology Jump</h1>
-    <p style="font-size:13px;color:#999;margin:0 0 8px;">将所有棋子移到对面即可获胜（含中间行）</p>
+    <h1>🧬 IG Biology Quiz</h1>
 
-
-    <div id="game-layout">
-        <div id="board-container"></div>
-        <div id="info-panel">
-            <div id="info-panel-header">
-                <div id="turn-display" style="font-size: 18px; font-weight: bold;">
-                    当前回合: <span id="player-label" style="color:#ff4757">—</span>
-                </div>
-
+    <div id="info-panel">
+        <div id="info-panel-header">
+            <div style="font-size: 16px; font-weight: bold;">
+                <span id="question-counter">请选择题库开始答题</span>
             </div>
-            <div id="question-area">
-                <div id="question-box">
-                    <div id="q-text">点击棋子开始移动...</div>
-                    <img id="q-image" style="display:none;" onclick="zoomImage(this.src)" />
-                    <div id="zoom-hint" class="zoom-hint" style="display:none;"><button class="zoom-btn" onclick="zoomImage(document.getElementById('q-image').src)">放大图片</button></div>
-                    <div id="options"></div>
-                </div>
+        </div>
+        <div class="progress-bar" id="progress-bar" style="display:none;">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="score-display" id="score-display" style="display:none;">
+            <span>✅ <span class="correct-count" id="correct-count">0</span></span>
+            <span>❌ <span class="wrong-count" id="wrong-count">0</span></span>
+            <span>剩余 <span class="total-count" id="remaining-count">0</span></span>
+        </div>
+        <div id="question-area">
+            <div id="question-box">
+                <div id="q-text">请点击下方按钮选择题库</div>
+                <img id="q-image" style="display:none;" onclick="zoomImage(this.src)" />
+                <div id="zoom-hint" class="zoom-hint" style="display:none;"><button class="zoom-btn" onclick="zoomImage(document.getElementById('q-image').src)">放大图片</button></div>
+                <div id="options"></div>
             </div>
-            <div id="msg" class="status-msg"></div>
-            <div class="controls">
-                <button id="end-turn-btn" class="btn-action">停止连跳 / 结束回合</button>
-                <button type="button" id="reselect-chapters-btn" class="btn-action">选择题库</button>
-            </div>
+        </div>
+        <div id="msg" class="status-msg"></div>
+        <div class="controls">
+            <button type="button" id="reselect-chapters-btn" class="btn-action" style="background:#007bff;color:white;">选择题库</button>
         </div>
     </div>
 
 <script>
-// --- IG Biology 题库 (图片模式) ---
-// 章节目录结构: questions/{chapter}/q01.jpg, q02.jpg, ...
-// 答案文件: questions/{chapter}/answers.json  [{q: 'q01.jpg', a: 'A'}, ...]
+// --- IG Biology 题库 ---
 const QUESTION_CHAPTERS = [
   { id: 'ch1_characteristics', name: 'Characteristics and Classification of Living Organisms', count: 45, answers: [
     {a:'B'},{a:'C'},{a:'D'},{a:'B'},{a:'D'},{a:'A'},{a:'A'},{a:'D'},{a:'A'},{a:'B'},
@@ -573,11 +439,17 @@ const QUESTION_CHAPTERS = [
   ]},
 ];
 
-let deepQuestions = [];  // 游戏运行时，根据选择填充
-let selectedQuestionCount = 0;  // 每局题量，0 = 不限
-let activeChapters = [];  // 本次游戏选中的章节
+// === State ===
+let deepQuestions = [];
+let selectedQuestionCount = 0;
+let activeChapters = [];
+let currentQuestionItem = null;
+let isAnswering = false;
+let questionIndex = 0;
+let totalCorrect = 0;
+let totalWrong = 0;
 
-// 从 chapters 加载题目到 deepQuestions
+// === Load questions ===
 function loadQuestionsFromChapters(chapterIds, maxCount) {
     deepQuestions = [];
     activeChapters = chapterIds;
@@ -606,22 +478,21 @@ function loadQuestionsFromChapters(chapterIds, maxCount) {
     }
 }
 
+// === Chapter selection UI ===
 function renderChapterList() {
     const container = document.getElementById('chapter-list');
     if (!QUESTION_CHAPTERS.length) {
-        container.innerHTML = '<div class="no-chapters-msg">暂无题库章节，请等待题目添加。</div>';
+        container.innerHTML = '<div class="no-chapters-msg">暂无题库章节。</div>';
         document.getElementById('question-count-info').textContent = '';
         return;
     }
     container.innerHTML = QUESTION_CHAPTERS.map(ch => {
-        const count = ch.count || 0;
         return `<div class="chapter-item" data-id="${ch.id}">
             <input type="checkbox" id="ch-${ch.id}" value="${ch.id}">
             <span class="ch-name">${ch.name}</span>
-            <span class="ch-count">${count} 题</span>
+            <span class="ch-count">${ch.count || 0} 题</span>
         </div>`;
     }).join('');
-    // Click handler for items
     container.querySelectorAll('.chapter-item').forEach(item => {
         item.addEventListener('click', (e) => {
             if (e.target.tagName === 'INPUT') return;
@@ -660,9 +531,8 @@ function updateChapterCountInfo() {
     if (total === 0) {
         info.textContent = '请至少选择一个章节';
     } else {
-        info.textContent = `已选 ${total} 道题${total > 0 ? '，留空则使用全部' : ''}`;
+        info.textContent = `已选 ${total} 道题，留空则使用全部`;
     }
-    // Set default max
     countInput.max = total || 999;
 }
 
@@ -691,29 +561,150 @@ function confirmChapterSelection() {
         w.textContent = '题量不能为负数';
         return;
     }
-    // Count total
     let total = 0;
     chapterIds.forEach(id => {
         const ch = QUESTION_CHAPTERS.find(c => c.id === id);
         if (ch) total += (ch.count || 0);
     });
     if (maxCount > total) {
-        w.textContent = `题量（${maxCount}）超过已选总题数（${total}）`; 
+        w.textContent = `题量（${maxCount}）超过已选总题数（${total}）`;
         return;
     }
     selectedQuestionCount = maxCount;
     loadQuestionsFromChapters(chapterIds, maxCount);
     w.textContent = '';
     closeChapterModal();
-    document.getElementById('name-modal').style.display = 'none';
-    restartGame();
+    startQuiz();
 }
 
-document.getElementById('start-game-btn2').onclick = confirmChapterSelection;
-document.getElementById('back-to-names-btn').onclick = () => {
-    closeChapterModal();
+function startQuiz() {
+    questionIndex = 0;
+    totalCorrect = 0;
+    totalWrong = 0;
+    document.getElementById('progress-bar').style.display = 'block';
+    document.getElementById('score-display').style.display = 'flex';
+    hideFinishOverlay();
+    updateScoreDisplay();
+    showNextQuestion();
+}
+
+function showNextQuestion() {
+    if (questionIndex >= deepQuestions.length) {
+        showFinishOverlay();
+        return;
+    }
+    isAnswering = true;
+    currentQuestionItem = deepQuestions[questionIndex];
+    renderCurrentQuestion();
+    updateScoreDisplay();
+}
+
+function renderCurrentQuestion() {
+    const item = currentQuestionItem;
+    if (!item) return;
+    document.getElementById('question-counter').textContent = `第 ${questionIndex + 1} / ${deepQuestions.length} 题`;
+    document.getElementById('q-text').innerHTML = `<b>Q${questionIndex + 1}：</b>`;
+
+    const qImg = document.getElementById('q-image');
+    const hint = document.getElementById('zoom-hint');
+    if (item.img) {
+        qImg.src = 'questions/' + item.q.replace('\n', '');
+        qImg.style.display = 'block';
+        if (hint) hint.style.display = 'block';
+    } else {
+        qImg.style.display = 'none';
+        if (hint) hint.style.display = 'none';
+    }
+
+    const opt = document.getElementById('options');
+    opt.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'options-row';
+    ['A', 'B', 'C', 'D'].forEach(letter => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = letter;
+        btn.onclick = () => handleAnswer(letter, btn);
+        opt.appendChild(btn);
+    });
+}
+
+function handleAnswer(letter, clickedBtn) {
+    if (!isAnswering) return;
+    isAnswering = false;
+
+    const qItem = currentQuestionItem;
+    const correct = testAllAnswersCorrect ? true : (letter === qItem.a);
+
+    // Disable all buttons and highlight
+    const allBtns = document.querySelectorAll('.option-btn');
+    allBtns.forEach(b => {
+        b.disabled = true;
+        if (b.textContent === qItem.a) b.classList.add('correct-answer');
+    });
+
+    if (correct) {
+        totalCorrect++;
+        showMsg('✅ 正确！', 'correct');
+    } else {
+        totalWrong++;
+        clickedBtn.classList.add('wrong-answer');
+        showMsg(`❌ 错误！正确答案是: ${qItem.a}`, 'incorrect');
+        addWrongQuestionRecord(qItem, questionIndex + 1);
+    }
+
+    updateScoreDisplay();
+
+    // Auto-advance after delay
+    setTimeout(() => {
+        hideMsg();
+        questionIndex++;
+        showNextQuestion();
+    }, 1500);
+}
+
+function updateScoreDisplay() {
+    const total = totalCorrect + totalWrong;
+    const remaining = deepQuestions.length - questionIndex;
+    document.getElementById('correct-count').textContent = totalCorrect;
+    document.getElementById('wrong-count').textContent = totalWrong;
+    document.getElementById('remaining-count').textContent = remaining;
+    const pct = deepQuestions.length > 0 ? Math.round((total / deepQuestions.length) * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function showMsg(t, c) {
+    const m = document.getElementById('msg');
+    m.textContent = t; m.className = 'status-msg ' + c; m.style.display = 'block';
+}
+
+function hideMsg() {
+    document.getElementById('msg').style.display = 'none';
+}
+
+// === Finish overlay ===
+function showFinishOverlay() {
+    const total = totalCorrect + totalWrong;
+    const acc = total > 0 ? Math.round((totalCorrect / total) * 100) + '%' : '—';
+    document.getElementById('finish-total').textContent = total;
+    document.getElementById('finish-correct').textContent = totalCorrect;
+    document.getElementById('finish-wrong').textContent = totalWrong;
+    document.getElementById('finish-acc').textContent = acc;
+    document.getElementById('finish-overlay').style.display = 'flex';
+    document.getElementById('finish-overlay').setAttribute('aria-hidden', 'false');
+}
+
+function hideFinishOverlay() {
+    document.getElementById('finish-overlay').style.display = 'none';
+    document.getElementById('finish-overlay').setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('finish-restart-btn').onclick = () => {
+    hideFinishOverlay();
+    openChapterModal();
 };
 
+// === Zoom image ===
 function zoomImage(src) {
     const overlay = document.createElement('div');
     overlay.className = 'image-overlay';
@@ -724,43 +715,31 @@ function zoomImage(src) {
     document.body.appendChild(overlay);
 }
 
-const WRONG_BOOK_KEY = 'ig-jump-wrong-book';
-const WRONG_BOOK_SESSION_KEY = 'ig-jump-wrong-book-session';
+// === Wrong book ===
+const WRONG_BOOK_KEY = 'ig-quiz-wrong-book';
+const WRONG_BOOK_SESSION_KEY = 'ig-quiz-wrong-book-session';
 
 if (!sessionStorage.getItem(WRONG_BOOK_SESSION_KEY)) {
-    try {
-        localStorage.removeItem(WRONG_BOOK_KEY);
-    } catch (e) {}
+    try { localStorage.removeItem(WRONG_BOOK_KEY); } catch (e) {}
     sessionStorage.setItem(WRONG_BOOK_SESSION_KEY, '1');
 }
 
 function getWrongBook() {
-    try {
-        return JSON.parse(localStorage.getItem(WRONG_BOOK_KEY) || '[]');
-    } catch {
-        return [];
-    }
+    try { return JSON.parse(localStorage.getItem(WRONG_BOOK_KEY) || '[]'); } catch { return []; }
 }
 
 function saveWrongBook(records) {
-    try {
-        localStorage.setItem(WRONG_BOOK_KEY, JSON.stringify(records));
-    } catch (e) {}
+    try { localStorage.setItem(WRONG_BOOK_KEY, JSON.stringify(records)); } catch (e) {}
 }
 
-function addWrongQuestionRecord(playerSide) {
-    if (!currentQuestionItem) return;
-
-    const playerNameSnapshot = playerSide === 'red' ? String(player1Name || '') : String(player2Name || '');
-
+function addWrongQuestionRecord(qItem, qNumber) {
+    if (!qItem) return;
     const records = getWrongBook();
     records.push({
-        player: playerNameSnapshot,
-        side: playerSide,
-        question: currentQuestionItem.q,
-        img: !!currentQuestionItem.img,
-        questionIndex: deepQuestions.indexOf(currentQuestionItem) + 1,
-        answer: currentQuestionItem.a,
+        question: qItem.q,
+        img: !!qItem.img,
+        questionIndex: qNumber,
+        answer: qItem.a,
         timestamp: Date.now()
     });
     saveWrongBook(records);
@@ -778,836 +757,90 @@ function escapeHtml(str) {
 function renderWrongBook() {
     const container = document.getElementById('wrong-book-list');
     const records = getWrongBook();
-
     if (!records.length) {
-        container.innerHTML = '<p>No wrong questions yet.</p>';
+        container.innerHTML = '<p>暂无错题。</p>';
         return;
     }
-
-    const byPlayer = new Map();
-    for (const item of records) {
-        const key = item.player != null ? String(item.player) : '';
-        if (!byPlayer.has(key)) byPlayer.set(key, []);
-        byPlayer.get(key).push(item);
-    }
-
-    const names = [...byPlayer.keys()].sort((a, b) => {
-        if (a === '' && b !== '') return 1;
-        if (b === '' && a !== '') return -1;
-        return a.localeCompare(b, 'zh-CN');
-    });
-
-    for (const name of names) {
-        const list = byPlayer.get(name);
-        list.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-    }
-
-    function renderItem(item, indexInGroup) {
-        return `
+    container.innerHTML = '<div class="wrong-book-section"><div class="wrong-book-section-title">全部错题<span class="wrong-book-count">共 ' + records.length + ' 题</span></div><div class="wrong-book-section-items">' +
+        records.map((item, i) => `
       <div class="wrong-book-item">
-        <div class="wrong-book-meta">
-          <strong>#${indexInGroup + 1}</strong>
-        </div>
+        <div class="wrong-book-meta"><strong>#${i + 1}</strong></div>
         <div class="wrong-book-question"><strong>Q${item.questionIndex || '?'}:</strong> ${item.img ? '<img src="questions/' + escapeHtml(item.question) + '" style="max-width:200px;border-radius:4px;">' : escapeHtml(item.question)}</div>
-        <div class="wrong-book-options">
-          <strong>Answer:</strong> ${escapeHtml(item.answer)}
-        </div>
-        <div class="wrong-book-answer"><strong>Correct Answer:</strong> ${escapeHtml(item.answer)}</div>
+        <div class="wrong-book-answer"><strong>正确答案:</strong> ${escapeHtml(item.answer)}</div>
       </div>
-    `;
-    }
-
-    container.innerHTML = names.map((name) => {
-        const list = byPlayer.get(name);
-        const displayName = name === '' ? '（未命名）' : name;
-        const itemsHtml = list.map((item, i) => renderItem(item, i)).join('');
-        return `
-      <section class="wrong-book-section">
-        <div class="wrong-book-section-title">${escapeHtml(displayName)}<span class="wrong-book-count">共 ${list.length} 题</span></div>
-        <div class="wrong-book-section-items">${itemsHtml}</div>
-      </section>
-    `;
-    }).join('');
+    `).join('') + '</div></div>';
 }
 
 function openWrongBook() {
     renderWrongBook();
     const o = document.getElementById('wrong-book-overlay');
-    o.style.display = 'flex';
-    o.setAttribute('aria-hidden', 'false');
+    o.style.display = 'flex'; o.setAttribute('aria-hidden', 'false');
 }
-
 function closeWrongBook() {
     const o = document.getElementById('wrong-book-overlay');
-    o.style.display = 'none';
-    o.setAttribute('aria-hidden', 'true');
+    o.style.display = 'none'; o.setAttribute('aria-hidden', 'true');
 }
-
 function clearAllWrongBook() {
     if (!window.confirm('确定要清空错题本中的全部记录吗？\n此操作无法撤销。')) return;
-    saveWrongBook([]);
-    renderWrongBook();
+    saveWrongBook([]); renderWrongBook();
 }
 
+// === Admin ===
 let testAllAnswersCorrect = (function () {
-    try {
-        return localStorage.getItem('allAnswersCorrectMode') === 'true';
-    } catch (e) {
-        return false;
-    }
+    try { return localStorage.getItem('allAnswersCorrectMode') === 'true'; } catch (e) { return false; }
 })();
 
-let showMoveHints = localStorage.getItem('showMoveHints');
-showMoveHints = showMoveHints === null ? true : showMoveHints === 'true';
-
-const layout = [4, 5, 6, 7, 6, 5, 4];
-const LAYOUT_MAX_W = Math.max(...layout);
-const HEX_STEP_Y = Math.sqrt(3) / 2;
-
-function getRowOffset(r) {
-    return (LAYOUT_MAX_W - layout[r]) / 2;
+function openAdminPanel() {
+    document.getElementById('admin-overlay').style.display = 'flex';
+    document.getElementById('admin-overlay').setAttribute('aria-hidden', 'false');
 }
-
-function getSlotCenter(r, c) {
-    return {
-        x: getRowOffset(r) + c + 0.5,
-        y: r * HEX_STEP_Y
-    };
+function closeAdminPanel() {
+    document.getElementById('admin-overlay').style.display = 'none';
+    document.getElementById('admin-overlay').setAttribute('aria-hidden', 'true');
 }
-
-function isValidCoord(r, c) {
-    return r >= 0 && r < layout.length && c >= 0 && c < layout[r];
-}
-
-function getSlot(r, c) {
-    if (!isValidCoord(r, c)) return null;
-    return document.querySelector(`.slot[data-r="${r}"][data-c="${c}"]`);
-}
-
-function slotHasPiece(slot) {
-    return !!(slot && slot.querySelector('.piece'));
-}
-
-function isSlotEmpty(slot) {
-    return !!(slot && !slot.querySelector('.piece'));
-}
-
-function sameSlot(a, b) {
-    return !!(a && b && a.dataset.r === b.dataset.r && a.dataset.c === b.dataset.c);
-}
-
-function getNeighborCoords(r, c) {
-    const p = getSlotCenter(r, c);
-    const out = [];
-    for (let r2 = 0; r2 < layout.length; r2++) {
-        for (let c2 = 0; c2 < layout[r2]; c2++) {
-            if (r2 === r && c2 === c) continue;
-            const p2 = getSlotCenter(r2, c2);
-            const d = Math.hypot(p2.x - p.x, p2.y - p.y);
-            if (d > 0.9 && d < 1.1) out.push([r2, c2]);
-        }
-    }
-    return out;
-}
-
-function findClosestSlotToPoint(px, py) {
-    let best = null;
-    let bestD = Infinity;
-    for (let r = 0; r < layout.length; r++) {
-        for (let c = 0; c < layout[r]; c++) {
-            const p = getSlotCenter(r, c);
-            const d = Math.hypot(p.x - px, p.y - py);
-            if (d < bestD) {
-                bestD = d;
-                best = { r, c };
-            }
-        }
-    }
-    return bestD < 0.2 ? best : null;
-}
-
-function getAdjacentSlots(slot) {
-    const r = +slot.dataset.r;
-    const c = +slot.dataset.c;
-    return getNeighborCoords(r, c).map(([nr, nc]) => getSlot(nr, nc)).filter(Boolean);
-}
-
-function getJumpTargets(r, c) {
-    const fromPt = getSlotCenter(r, c);
-    const seen = new Set();
-    const out = [];
-    getNeighborCoords(r, c).forEach(([mr, mc]) => {
-        const mid = getSlot(mr, mc);
-        if (!slotHasPiece(mid)) return;
-        const midPt = getSlotCenter(mr, mc);
-        const landingX = 2 * midPt.x - fromPt.x;
-        const landingY = 2 * midPt.y - fromPt.y;
-        const landCoord = findClosestSlotToPoint(landingX, landingY);
-        if (!landCoord) return;
-        if (landCoord.r === r && landCoord.c === c) return;
-        if (landCoord.r === mr && landCoord.c === mc) return;
-        const land = getSlot(landCoord.r, landCoord.c);
-        if (!land || !isSlotEmpty(land)) return;
-        const key = landCoord.r + ',' + landCoord.c;
-        if (seen.has(key)) return;
-        seen.add(key);
-        out.push(land);
-    });
-    return out;
-}
-
-function getMoveType(from, to) {
-    const r = +from.dataset.r;
-    const c = +from.dataset.c;
-
-    const neighbors = getNeighborCoords(r, c);
-    if (neighbors.some(([nr, nc]) =>
-        nr === +to.dataset.r && nc === +to.dataset.c
-    )) {
-        return 'walk';
-    }
-
-    const jumps = getJumpTargets(r, c);
-    if (jumps.some(s => sameSlot(s, to))) {
-        return 'jump';
-    }
-
-    return null;
-}
-
-function clearMoveHighlights() {
-    document.querySelectorAll('.slot').forEach(s => {
-        s.classList.remove('jump-debug', 'walk-debug', 'pending-target');
-    });
-}
-
-function refreshBoardHighlights() {
-    clearMoveHighlights();
-    if (!showMoveHints || gameOver) return;
-    if (selectedSlot) {
-        const r = +selectedSlot.dataset.r;
-        const c = +selectedSlot.dataset.c;
-        if (!isMoving) {
-            getNeighborCoords(r, c).forEach(([nr, nc]) => {
-                const s = getSlot(nr, nc);
-                if (s && isSlotEmpty(s)) s.classList.add('walk-debug');
-            });
-        }
-        getJumpTargets(r, c).forEach(s => s.classList.add('jump-debug'));
-    }
-    if (pendingMoveTarget && isAwaitingAnswer) {
-        pendingMoveTarget.classList.add('pending-target');
-    }
-}
-
-let currentPlayer = 1;
-let selectedSlot = null;
-let hasAnswered = false;
-let isMoving = false;
-let gameOver = false;
-let turnLocked = false;
-let player1Name = '';
-let player2Name = '';
-let player1Answered = 0;
-let player1Wrong = 0;
-let player2Answered = 0;
-let player2Wrong = 0;
-let pendingMoveFrom = null;
-let pendingMoveTarget = null;
-let pendingMoveType = null;
-let currentQuestionItem = null;
-let currentQuestionChoices = [];
-let isAwaitingAnswer = false;
-const RECENT_QUESTION_WINDOW = 5;
-let recentQuestionIndices = [];
-
-function pickRandomQuestionIndex() {
-    const n = deepQuestions.length;
-    const banned = new Set(recentQuestionIndices);
-    const candidates = [];
-    for (let i = 0; i < n; i++) {
-        if (!banned.has(i)) candidates.push(i);
-    }
-    const pool = candidates.length > 0 ? candidates : Array.from({ length: n }, (_, i) => i);
-    return pool[Math.floor(Math.random() * pool.length)];
-}
-function clearAllSelectedHighlights() {
-    document.querySelectorAll('.slot.selected').forEach(s => {
-        s.classList.remove('selected');
-    });
-}
-
-function clearSelectedPiece() {
-    clearAllSelectedHighlights();
-    selectedSlot = null;
-}
-
-
-function handleQuestionWrong() {
-    turnLocked = true;
-    
-const ans = currentQuestionItem ? currentQuestionItem.a : '';
-    addWrongQuestionRecord(currentPlayer === 1 ? 'red' : 'blue');
-    clearSelectedPiece();
-    clearPendingQuestionState();
-    showMsg(`❌ 错误！正确答案是: ${ans}`, 'incorrect');
-    setTimeout(endTurn, 2500);
-}
-
-function clearPendingQuestionState() {
-    pendingMoveFrom = null;
-    pendingMoveTarget = null;
-    pendingMoveType = null;
-    currentQuestionItem = null;
-    currentQuestionChoices = [];
-    isAwaitingAnswer = false;
-    clearQuestionDisplay();
-    document.getElementById('options').innerHTML = '';
-    refreshBoardHighlights();
-}
-
-function ensureQuestionLocked() {
-    if (turnLocked || gameOver) return;
-    if (currentQuestionItem === null) {
-        const idx = pickRandomQuestionIndex();
-        currentQuestionItem = deepQuestions[idx];
-        recentQuestionIndices.push(idx);
-        if (recentQuestionIndices.length > RECENT_QUESTION_WINDOW) {
-            recentQuestionIndices.shift();
-        }
-        currentQuestionChoices = [];
-        isAwaitingAnswer = true;
-    }
-}
-
-function clearQuestionDisplay() {
-    document.getElementById('q-image').style.display = 'none';
-    document.getElementById('zoom-hint').style.display = 'none';
-}
-
-function renderCurrentQuestion() {
-    const item = currentQuestionItem;
-    if (!item) return;
-    document.getElementById('q-text').innerHTML = item.img
-      ? `<b>起跳验证 Q${deepQuestions.indexOf(item)+1}：</b>`
-      : `<b>起跳验证：</b><br>${item.q}`;
-    const qImg = document.getElementById('q-image');
-    const hint = document.getElementById('zoom-hint');
-    if (item.img) {
-      qImg.src = 'questions/' + item.q.replace('\n','');
-      qImg.style.display = 'block';
-      if (hint) hint.style.display = 'block';
-    } else {
-      qImg.style.display = 'none';
-      if (hint) hint.style.display = 'none';
-    }
-    const opt = document.getElementById('options');
-    opt.innerHTML = '';
-    const row = document.createElement('div');
-    row.className = 'options-row';
-    ['A', 'B', 'C', 'D'].forEach(letter => {
-        const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        btn.textContent = letter;
-        btn.onclick = () => {
-            if (turnLocked || gameOver) return;
-            const qItem = currentQuestionItem;
-            const correct = testAllAnswersCorrect ? true : (letter === qItem.a);
-            recordAnswer(correct);
-            if (correct) {
-                const from = pendingMoveFrom;
-                const to = pendingMoveTarget;
-                const mt = pendingMoveType;
-                if (!from || !to || mt == null) return;
-                hasAnswered = true;
-                clearPendingQuestionState();
-                showMsg("✅ 正确！移动授权成功。", "correct");
-                execute(from, to, mt);
-            } else {
-                handleQuestionWrong();
-            }
-        };
-        opt.appendChild(btn);
-    });
-}
-
-function resetStats() {
-    player1Answered = 0;
-    player1Wrong = 0;
-    player2Answered = 0;
-    player2Wrong = 0;
-}
-
-function recordAnswer(isCorrect) {
-    if (currentPlayer === 1) {
-        player1Answered++;
-        if (!isCorrect) player1Wrong++;
-    } else {
-        player2Answered++;
-        if (!isCorrect) player2Wrong++;
-    }
-}
-
-function getPlayerName(playerNum) {
-    return playerNum === 1 ? player1Name : player2Name;
-}
-
-function updateTurnDisplay() {
-    const label = document.getElementById('player-label');
-    label.textContent = getPlayerName(currentPlayer) + ' 的回合';
-    label.style.color = currentPlayer === 1 ? '#ff4757' : '#2e86de';
-}
-
-function winnerDisplayName(playerNum) {
-    const n = (playerNum === 1 ? player1Name : player2Name).trim();
-    return n || (playerNum === 1 ? '玩家 1' : '玩家 2');
-}
-
-/** 棋盘共 7 行 (0–6)，中间行为 index 3。胜利：己方全部棋子到达中线或对方半场（含踩在中线 r===3）。 */
-const BOARD_MIDDLE_ROW = 3;
-
-function checkWin() {
-    const p1Pieces = document.querySelectorAll('.piece.p1');
-    const p2Pieces = document.querySelectorAll('.piece.p2');
-    const p1AllPast = p1Pieces.length && [...p1Pieces].every((p) => {
-        const slot = p.closest('.slot');
-        return slot && +slot.dataset.r >= BOARD_MIDDLE_ROW;
-    });
-    const p2AllPast = p2Pieces.length && [...p2Pieces].every((p) => {
-        const slot = p.closest('.slot');
-        return slot && +slot.dataset.r <= BOARD_MIDDLE_ROW;
-    });
-    if (p1AllPast) return 1;
-    if (p2AllPast) return 2;
-    return null;
-}
-
-function showResultModal(winnerNum) {
-    const wname = winnerDisplayName(winnerNum);
-    document.getElementById('winner-name').textContent = '胜利者：' + wname;
-    document.getElementById('result-p1-name').textContent = '玩家 1 / ' + winnerDisplayName(1);
-    document.getElementById('result-p2-name').textContent = '玩家 2 / ' + winnerDisplayName(2);
-    document.getElementById('p1-answered').textContent = player1Answered;
-    document.getElementById('p1-wrong').textContent = player1Wrong;
-    document.getElementById('p2-answered').textContent = player2Answered;
-    document.getElementById('p2-wrong').textContent = player2Wrong;
-    const correct1 = player1Answered - player1Wrong;
-    const correct2 = player2Answered - player2Wrong;
-    const acc1 = player1Answered > 0 ? Math.round((correct1 / player1Answered) * 100) + '%' : '—';
-    const acc2 = player2Answered > 0 ? Math.round((correct2 / player2Answered) * 100) + '%' : '—';
-    document.getElementById('p1-acc-line').textContent = '正确率：' + acc1;
-    document.getElementById('p2-acc-line').textContent = '正确率：' + acc2;
-    const ro = document.getElementById('result-overlay');
-    ro.style.display = 'flex';
-    ro.setAttribute('aria-hidden', 'false');
-}
-
-function hideResultOverlay() {
-    const ro = document.getElementById('result-overlay');
-    ro.style.display = 'none';
-    ro.setAttribute('aria-hidden', 'true');
-}
-
-function declareWinner(playerNum) {
-    gameOver = true;
-    turnLocked = false;
-    clearAllSelectedHighlights();
-    selectedSlot = null;
-    hasAnswered = false;
-    isMoving = false;
-    clearPendingQuestionState();
-    document.getElementById('end-turn-btn').style.display = 'none';
-    document.getElementById('options').innerHTML = '';
-    const name = winnerDisplayName(playerNum);
-    document.getElementById('player-label').textContent = '游戏结束：' + name + ' 获胜！';
-    document.getElementById('player-label').style.color = playerNum === 1 ? '#ff4757' : '#2e86de';
-    clearQuestionDisplay(); document.getElementById('q-text').textContent = '游戏已结束。';
-    document.getElementById('msg').style.display = 'none';
-    showResultModal(playerNum);
-}
-
-// TEST ONLY: force random winner for UI/debugging
-function forceRandomWinner() {
-    if (gameOver) return;
-    const randomPlayer = Math.random() < 0.5 ? 1 : 2;
-    declareWinner(randomPlayer);
-}
-
-function loadSavedPlayerNames() {
-    try {
-        const s1 = localStorage.getItem('ig-jump-player1');
-        const s2 = localStorage.getItem('ig-jump-player2');
-        const n1 = s1 != null ? String(s1).trim() : '';
-        const n2 = s2 != null ? String(s2).trim() : '';
-        if (n1 && n2) {
-            player1Name = n1;
-            player2Name = n2;
-            return true;
-        }
-    } catch (e) {}
-    return false;
-}
-
-function savePlayerNamesToStorage(n1, n2) {
-    try {
-        localStorage.setItem('ig-jump-player1', n1);
-        localStorage.setItem('ig-jump-player2', n2);
-    } catch (e) {}
-}
-
-function prefillModalInputs() {
-    try {
-        const s1 = localStorage.getItem('ig-jump-player1');
-        const s2 = localStorage.getItem('ig-jump-player2');
-        const el1 = document.getElementById('red-name-input');
-        const el2 = document.getElementById('blue-name-input');
-        if (s1 != null && s1 !== '') el1.value = String(s1).trim();
-        if (s2 != null && s2 !== '') el2.value = String(s2).trim();
-    } catch (e) {}
-}
-
-function openNameModal(prefill) {
-    document.getElementById('name-modal-warning').textContent = '';
-    document.getElementById('name-modal').style.display = 'flex';
-    const el1 = document.getElementById('red-name-input');
-    const el2 = document.getElementById('blue-name-input');
-    if (prefill) {
-        el1.value = player1Name || '';
-        el2.value = player2Name || '';
-    } else {
-        el1.value = '';
-        el2.value = '';
-        prefillModalInputs();
-    }
-}
-
-function nameInputTriggersAdmin(trimmed) {
-    return trimmed === '/' || (trimmed.length > 1 && trimmed.endsWith('/'));
-}
-
-function saveNamesOnly() {
-    const w = document.getElementById('name-modal-warning');
-    const redIn = document.getElementById('red-name-input');
-    const blueIn = document.getElementById('blue-name-input');
-    const n1 = redIn.value.trim();
-    const n2 = blueIn.value.trim();
-    if (nameInputTriggersAdmin(n1) || nameInputTriggersAdmin(n2)) {
-        w.textContent = '';
-        openAdminPanel();
-        return;
-    }
-    if (!n1 || !n2) {
-        w.textContent = '请填写双方名称。';
-        return;
-    }
-    w.textContent = '';
-    player1Name = n1;
-    player2Name = n2;
-    savePlayerNamesToStorage(n1, n2);
-    document.getElementById('name-modal').style.display = 'none';
-    updateTurnDisplay();
-}
-
-function confirmNameModal() {
-    saveNamesOnly();
-    if (deepQuestions.length > 0) {
-        restartGame();
-    } else {
-        openChapterModal();
-    }
-}
-
-function restartGame() {
-    hideResultOverlay();
-    resetStats();
-    recentQuestionIndices = [];
-    turnLocked = false;
-    clearAllSelectedHighlights();
-    selectedSlot = null;
-    hasAnswered = false;
-    isMoving = false;
-    clearPendingQuestionState();
-    gameOver = false;
-    currentPlayer = 1;
-    document.getElementById('end-turn-btn').style.display = 'none';
-    document.getElementById('msg').style.display = 'none';
-    clearQuestionDisplay(); document.getElementById('q-text').textContent = '点击棋子开始移动...';
-    document.getElementById('options').innerHTML = '';
-    document.getElementById('q-image').style.display = 'none';
-    document.getElementById('zoom-hint').style.display = 'none';
-    initBoard();
-    updateTurnDisplay();
-    refreshBoardHighlights();
-}
-
-function initBoard() {
-    const container = document.getElementById('board-container');
-    container.innerHTML = '';
-    layout.forEach((cols, r) => {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'row';
-        for (let c = 0; c < cols; c++) {
-            const slot = document.createElement('div');
-            slot.className = 'slot';
-            slot.dataset.r = r; slot.dataset.c = c;
-            if (r <= 1) slot.innerHTML = `<div class="piece p1"></div>`;
-            if (r >= 5) slot.innerHTML = `<div class="piece p2"></div>`;
-            slot.onclick = () => handleClick(slot);
-            rowDiv.appendChild(slot);
-        }
-        container.appendChild(rowDiv);
-    });
-}
-
-function handleClick(slot) {
-    if (turnLocked || gameOver) return;
-    if (deepQuestions.length === 0) {
-        showToast('请先选择题库');
-        return;
-    }
-    const piece = slot.querySelector('.piece');
-    if (isMoving) {
-        if (!piece) tryJump(selectedSlot, slot);
-        return;
-    }
-    if (piece && piece.classList.contains('p' + currentPlayer)) {
-        const prevSelected = selectedSlot;
-        clearAllSelectedHighlights();
-        selectedSlot = slot;
-        slot.classList.add('selected');
-        if (isAwaitingAnswer && prevSelected && prevSelected !== slot) {
-            pendingMoveFrom = null;
-            pendingMoveTarget = null;
-            pendingMoveType = null;
-        }
-        refreshBoardHighlights();
-        return;
-    }
-    if (selectedSlot && !piece) {
-        console.log('--- DEBUG CLICK ---');
-        console.log('FROM:', selectedSlot.dataset.r, selectedSlot.dataset.c);
-        console.log('TO:', slot.dataset.r, slot.dataset.c);
-        const move = getMoveType(selectedSlot, slot);
-        console.log('MOVE TYPE:', move);
-        const jumps = getJumpTargets(+selectedSlot.dataset.r, +selectedSlot.dataset.c);
-        console.log('VALID JUMPS:', jumps.map(s => [s.dataset.r, s.dataset.c]));
-        if (move === null) console.warn('INVALID MOVE');
-        if (move) {
-            if (!hasAnswered) {
-                pendingMoveFrom = selectedSlot;
-                pendingMoveTarget = slot;
-                pendingMoveType = move;
-                ensureQuestionLocked();
-                renderCurrentQuestion();
-                refreshBoardHighlights();
-            } else {
-                execute(selectedSlot, slot, move);
-            }
-        }
-    }
-}
-
-function execute(from, to, type) {
-    to.innerHTML = from.innerHTML;
-    from.innerHTML = '';
-    clearAllSelectedHighlights();
-    selectedSlot = null;
-    const winner = checkWin();
-    if (winner) {
-        declareWinner(winner);
-        return;
-    }
-    if (type === 'walk') {
-        endTurn();
-    } else {
-        isMoving = true;
-        selectedSlot = to;
-        selectedSlot.classList.add('selected');
-        document.getElementById('end-turn-btn').style.display = 'block';
-        clearQuestionDisplay(); document.getElementById('q-text').textContent = "连跳模式开启！点击落点或结束。";
-        document.getElementById('options').innerHTML = '';
-        refreshBoardHighlights();
-    }
-}
-
-function tryJump(from, to) {
-    if (turnLocked || gameOver) return;
-    console.log('--- DEBUG CLICK (chain jump) ---');
-    console.log('FROM:', from.dataset.r, from.dataset.c);
-    console.log('TO:', to.dataset.r, to.dataset.c);
-    const moveType = getMoveType(from, to);
-    console.log('MOVE TYPE:', moveType);
-    const jumps = getJumpTargets(+from.dataset.r, +from.dataset.c);
-    console.log('VALID JUMPS:', jumps.map(s => [s.dataset.r, s.dataset.c]));
-    if (moveType === null) console.warn('INVALID MOVE');
-    if (moveType === 'jump') execute(from, to, 'jump');
-}
-
-function endTurn() {
-    if (gameOver) return;
-    turnLocked = false;
-    clearAllSelectedHighlights();
-    selectedSlot = null;
-    hasAnswered = false;
-    isMoving = false;
-    clearPendingQuestionState();
-    currentPlayer = currentPlayer === 1 ? 2 : 1;
-    updateTurnDisplay();
-    document.getElementById('end-turn-btn').style.display = 'none';
-    clearQuestionDisplay(); document.getElementById('q-text').textContent = "请选中棋子...";
-    document.getElementById('options').innerHTML = '';
-    document.getElementById('msg').style.display = 'none';
-}
-
-function showMsg(t, c) {
-    const m = document.getElementById('msg');
-    m.textContent = t; m.className = 'status-msg ' + c; m.style.display = 'block';
-}
-
-document.getElementById('end-turn-btn').onclick = endTurn;
-document.getElementById('reselect-chapters-btn').onclick = () => { openChapterModal(); };
-document.getElementById('reselect-chapters-btn2').onclick = () => { openChapterModal(); };
-document.getElementById('change-names-btn').onclick = function () { openNameModal(true); };
-document.getElementById('name-modal-close').onclick = function () { document.getElementById('name-modal').style.display = 'none'; };
-document.getElementById('wrong-book-btn').onclick = openWrongBook;
-document.getElementById('wrong-book-clear-all').onclick = clearAllWrongBook;
-document.getElementById('wrong-book-close').onclick = closeWrongBook;
-document.getElementById('wrong-book-panel').addEventListener('click', function (e) {
-    e.stopPropagation();
-});
-document.getElementById('wrong-book-overlay').addEventListener('click', function () {
-    closeWrongBook();
-});
-document.getElementById('test-random-winner-btn').onclick = forceRandomWinner;
 
 function updateAnswerTestToggleButton() {
     const btn = document.getElementById('toggle-answer-test-btn');
     btn.textContent = testAllAnswersCorrect ? 'All Answers Correct: ON' : 'All Answers Correct: OFF';
     btn.classList.toggle('is-on', testAllAnswersCorrect);
 }
+
+// === Event bindings ===
+document.getElementById('start-game-btn2').onclick = confirmChapterSelection;
+document.getElementById('back-to-names-btn').onclick = closeChapterModal;
+document.getElementById('reselect-chapters-btn').onclick = openChapterModal;
+document.getElementById('wrong-book-btn').onclick = openWrongBook;
+document.getElementById('wrong-book-clear-all').onclick = clearAllWrongBook;
+document.getElementById('wrong-book-close').onclick = closeWrongBook;
+document.getElementById('wrong-book-panel').addEventListener('click', (e) => e.stopPropagation());
+document.getElementById('wrong-book-overlay').addEventListener('click', closeWrongBook);
 document.getElementById('toggle-answer-test-btn').onclick = function () {
     testAllAnswersCorrect = !testAllAnswersCorrect;
-    try {
-        localStorage.setItem('allAnswersCorrectMode', String(testAllAnswersCorrect));
-    } catch (e) {}
+    try { localStorage.setItem('allAnswersCorrectMode', String(testAllAnswersCorrect)); } catch (e) {}
     updateAnswerTestToggleButton();
 };
 updateAnswerTestToggleButton();
-
-function updateMoveHintsButton() {
-    const btn = document.getElementById('toggle-move-hints-btn');
-    btn.textContent = showMoveHints ? 'Hints: ON' : 'Hints: OFF';
-}
-document.getElementById('toggle-move-hints-btn').onclick = function () {
-    showMoveHints = !showMoveHints;
-    try {
-        localStorage.setItem('showMoveHints', String(showMoveHints));
-    } catch (e) {}
-    updateMoveHintsButton();
-    refreshBoardHighlights();
-};
-updateMoveHintsButton();
-
-document.getElementById('save-names-btn').onclick = saveNamesOnly;
-
-function openAdminPanel() {
-    const overlay = document.getElementById('admin-overlay');
-    overlay.style.display = 'flex';
-    overlay.setAttribute('aria-hidden', 'false');
-}
-
-function stripTrailingSlashFromNameInputs() {
-    ['red-name-input', 'blue-name-input'].forEach(function (id) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const v = el.value;
-        if (v.trim() === '/') {
-            el.value = '';
-        } else if (v.trim().endsWith('/')) {
-            el.value = v.replace(/\s*\/+\s*$/, '');
-        }
-    });
-}
-
-function closeAdminPanel() {
-    const overlay = document.getElementById('admin-overlay');
-    overlay.style.display = 'none';
-    overlay.setAttribute('aria-hidden', 'true');
-    stripTrailingSlashFromNameInputs();
-}
-
-function setupNameInputAdminTrigger(input) {
-    input.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter') return;
-        const t = input.value.trim();
-        if (!nameInputTriggersAdmin(t)) return;
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        openAdminPanel();
-    }, true);
-}
-
-setupNameInputAdminTrigger(document.getElementById('red-name-input'));
-setupNameInputAdminTrigger(document.getElementById('blue-name-input'));
-
-document.getElementById('admin-panel').addEventListener('click', function (e) {
-    e.stopPropagation();
-});
-
-document.getElementById('admin-overlay').addEventListener('click', function () {
-    closeAdminPanel();
-});
+document.getElementById('admin-panel').addEventListener('click', (e) => e.stopPropagation());
+document.getElementById('admin-overlay').addEventListener('click', closeAdminPanel);
+document.getElementById('admin-close').onclick = closeAdminPanel;
 
 document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     const wb = document.getElementById('wrong-book-overlay');
-    if (wb && wb.style.display === 'flex') {
-        closeWrongBook();
-        return;
-    }
+    if (wb && wb.style.display === 'flex') { closeWrongBook(); return; }
+    const ch = document.getElementById('chapter-modal');
+    if (ch && ch.style.display === 'flex') { closeChapterModal(); return; }
     const overlay = document.getElementById('admin-overlay');
     if (overlay && overlay.style.display === 'flex') closeAdminPanel();
 });
 
-document.getElementById('admin-close').onclick = closeAdminPanel;
-
-
-(function bootGame() {
-    if (loadSavedPlayerNames()) {
-        document.getElementById('name-modal').style.display = 'none';
-        resetStats();
-        hideResultOverlay();
-        clearPendingQuestionState();
-        gameOver = false;
-        turnLocked = false;
-        currentPlayer = 1;
-        clearAllSelectedHighlights();
-        selectedSlot = null;
-        hasAnswered = false;
-        isMoving = false;
-        initBoard();
-        updateTurnDisplay();
-        // Ensure turn display updates after DOM is ready
-        setTimeout(() => updateTurnDisplay(), 0);
-        refreshBoardHighlights();
-    } else {
-        openNameModal(false);
+// === Boot ===
+(function bootQuiz() {
+    if (deepQuestions.length > 0) {
+        startQuiz();
     }
+    // Otherwise user needs to select chapters first
 })();
-function showToast(msg, duration = 2000) {
-    let t = document.getElementById('toast-msg');
-    if (!t) {
-        t = document.createElement('div');
-        t.id = 'toast-msg';
-        t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;';
-        document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.style.opacity = '1';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => { t.style.opacity = '0'; }, duration);
-}
 </script>
 </body>
 </html>
