@@ -829,12 +829,6 @@ function zoomImage(src) {
 
 // === Wrong book ===
 const WRONG_BOOK_KEY = 'ig-quiz-wrong-book';
-const WRONG_BOOK_SESSION_KEY = 'ig-quiz-wrong-book-session';
-
-if (!sessionStorage.getItem(WRONG_BOOK_SESSION_KEY)) {
-    try { localStorage.removeItem(WRONG_BOOK_KEY); } catch (e) {}
-    sessionStorage.setItem(WRONG_BOOK_SESSION_KEY, '1');
-}
 
 function getWrongBook() {
     try { return JSON.parse(localStorage.getItem(WRONG_BOOK_KEY) || '[]'); } catch { return []; }
