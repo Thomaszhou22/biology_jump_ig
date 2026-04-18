@@ -302,6 +302,7 @@
         <div id="msg" class="status-msg"></div>
         <div class="controls">
             <button type="button" id="reselect-chapters-btn" class="btn-action" style="background:#007bff;color:white;">选择题库</button>
+            <button type="button" id="abort-btn" class="btn-action" style="background:#dc3545;color:white;display:none;margin-top:8px;">终止答题</button>
         </div>
     </div>
 
@@ -449,6 +450,41 @@ let questionIndex = 0;
 let totalCorrect = 0;
 let totalWrong = 0;
 
+// === Progress persistence ===
+const PROGRESS_KEY = 'ig-quiz-progress';
+function saveProgress() {
+    try {
+        const itemIdx = deepQuestions.indexOf(currentQuestionItem);
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+            deepQuestions, questionIndex, totalCorrect, totalWrong, currentQuestionItemIndex: itemIdx >= 0 ? itemIdx : 0
+        }));
+    } catch(e) {}
+}
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem(PROGRESS_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch(e) { return null; }
+}
+function clearProgress() {
+    try { localStorage.removeItem(PROGRESS_KEY); } catch(e) {}
+}
+function abortQuiz() {
+    clearProgress();
+    deepQuestions = []; currentQuestionItem = null; isAnswering = false;
+    questionIndex = 0; totalCorrect = 0; totalWrong = 0;
+    document.getElementById('progress-bar').style.display = 'none';
+    document.getElementById('score-display').style.display = 'none';
+    document.getElementById('question-counter').textContent = '请选择题库开始答题';
+    document.getElementById('q-text').textContent = '请点击下方按钮选择题库';
+    document.getElementById('q-image').style.display = 'none';
+    document.getElementById('zoom-hint').style.display = 'none';
+    document.getElementById('options').innerHTML = '';
+    document.getElementById('abort-btn').style.display = 'none';
+    hideMsg(); hideFinishOverlay();
+}
+
 // === Load questions ===
 function loadQuestionsFromChapters(chapterIds, maxCount) {
     deepQuestions = [];
@@ -585,6 +621,8 @@ function startQuiz() {
     document.getElementById('score-display').style.display = 'flex';
     hideFinishOverlay();
     updateScoreDisplay();
+    document.getElementById('abort-btn').style.display = 'block';
+    saveProgress();
     showNextQuestion();
 }
 
@@ -654,6 +692,7 @@ function handleAnswer(letter, clickedBtn) {
     }
 
     updateScoreDisplay();
+    saveProgress();
 
     // Auto-advance after delay
     setTimeout(() => {
@@ -700,6 +739,8 @@ function hideFinishOverlay() {
 }
 
 document.getElementById('finish-restart-btn').onclick = () => {
+    clearProgress();
+    document.getElementById('abort-btn').style.display = 'none';
     hideFinishOverlay();
     openChapterModal();
 };
@@ -808,7 +849,8 @@ function updateAnswerTestToggleButton() {
 // === Event bindings ===
 document.getElementById('start-game-btn2').onclick = confirmChapterSelection;
 document.getElementById('back-to-names-btn').onclick = closeChapterModal;
-document.getElementById('reselect-chapters-btn').onclick = openChapterModal;
+document.getElementById('reselect-chapters-btn').onclick = () => { clearProgress(); document.getElementById('abort-btn').style.display = 'none'; openChapterModal(); };
+document.getElementById('abort-btn').onclick = abortQuiz;
 document.getElementById('wrong-book-btn').onclick = openWrongBook;
 document.getElementById('wrong-book-clear-all').onclick = clearAllWrongBook;
 document.getElementById('wrong-book-close').onclick = closeWrongBook;
@@ -824,6 +866,28 @@ document.getElementById('admin-panel').addEventListener('click', (e) => e.stopPr
 document.getElementById('admin-overlay').addEventListener('click', closeAdminPanel);
 document.getElementById('admin-close').onclick = closeAdminPanel;
 
+// === Restore progress on boot ===
+(function bootQuiz() {
+    const saved = loadProgress();
+    if (saved && saved.deepQuestions && saved.deepQuestions.length > 0) {
+        deepQuestions = saved.deepQuestions;
+        questionIndex = saved.questionIndex || 0;
+        totalCorrect = saved.totalCorrect || 0;
+        totalWrong = saved.totalWrong || 0;
+        document.getElementById('progress-bar').style.display = 'block';
+        document.getElementById('score-display').style.display = 'flex';
+        document.getElementById('abort-btn').style.display = 'block';
+        if (questionIndex >= deepQuestions.length) {
+            showFinishOverlay();
+        } else {
+            currentQuestionItem = deepQuestions[questionIndex];
+            isAnswering = true;
+            renderCurrentQuestion();
+            updateScoreDisplay();
+        }
+    }
+})();
+
 document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     const wb = document.getElementById('wrong-book-overlay');
@@ -834,13 +898,6 @@ document.addEventListener('keydown', function (e) {
     if (overlay && overlay.style.display === 'flex') closeAdminPanel();
 });
 
-// === Boot ===
-(function bootQuiz() {
-    if (deepQuestions.length > 0) {
-        startQuiz();
-    }
-    // Otherwise user needs to select chapters first
-})();
 </script>
 </body>
 </html>
